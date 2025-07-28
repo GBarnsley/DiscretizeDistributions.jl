@@ -1,6 +1,8 @@
 # DiscretiseDistributions.jl
 
-[![Test Status](https://github.com/GBarnsley/DiscretiseDistributions.jl/workflows/CI/badge.svg)](https://github.com/GBarnsley/DiscretiseDistributions.jl/actions)
+[![Build Status](https://github.com/GBarnsley/DiscretiseDistributions.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/GBarnsley/DiscretiseDistributions.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://GBarnsley.github.io/DiscretiseDistributions.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://GBarnsley.github.io/DiscretiseDistributions.jl/dev)
 
 A Julia package for discretising continuous and discrete probability distributions into discrete representations with specified interval structures.
 
