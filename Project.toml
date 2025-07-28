@@ -1,7 +1,7 @@
-name = "DiscretiseDistributions"
+name = "DiscretizeDistributions"
 uuid = "1dbf0e27-43cd-4e03-8ecf-3f7be9d12b15"
 authors = ["GBarnsley <gregbarnsley@hotmail.co.uk>"]
-version = "0.2.0"
+version = "0.1.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -12,6 +12,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Distributions = "0.25.120"
 IntervalArithmetic = "0.23.0"
 Test = "1.11.0"
+Julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
