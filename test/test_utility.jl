@@ -1,151 +1,237 @@
-@testset "Utility function tests" begin
+@testset "Utility function tests for interval-based backend" begin
     
-    @testset "center_distribution function tests" begin
-        # Create a simple discrete distribution for testing
-        support_vals = [1.0, 2.0, 3.0, 4.0, 5.0]
-        probabilities = [0.1, 0.2, 0.4, 0.2, 0.1]
-        test_dist = DiscreteNonParametric(support_vals, probabilities)
+    # Import the internal function for testing
+    import DiscretiseDistributions: remove_infinities
+    
+    @testset "remove_infinities function tests" begin
+        # Create a distribution using discretise function then manually add infinite intervals for testing
+        normal_dist = Normal(0, 1)
+        base_discrete = discretise(normal_dist, 0.5)
         
-        # Test center_distribution without interval parameter
-        centered = center_distribution(test_dist)
-        @test centered isa DiscreteNonParametric
+        # We'll test remove_infinities by creating a distribution that already includes infinite intervals
+        # through the discretise function with extreme quantiles
+        discrete_with_extremes = discretise(normal_dist, 0.5; min_quantile=1e-10, max_quantile=1-1e-10)
         
-        # Check that support is centered between original intervals
-        original_support = support(test_dist)
-        centered_support = support(centered)
-        expected_centers = original_support[1:end-1] .+ (diff(original_support) ./ 2)
-        @test centered_support == expected_centers
+        # Test remove_infinities on this distribution
+        cleaned = remove_infinities(discrete_with_extremes)
+        @test cleaned isa DiscreteNonParametric
+        @test eltype(support(cleaned)) <: Interval
         
-        # Check that probabilities are preserved (except last one is dropped)
-        @test probs(centered) == probs(test_dist)[1:end-1]
-        @test sum(probs(centered)) ≈ sum(probabilities[1:end-1]) atol=1e-10
+        # Check that infinite intervals are removed (if any existed)
+        cleaned_intervals = support(cleaned)
+        @test all(interval -> !isinf(inf(interval)) && !isinf(sup(interval)), cleaned_intervals)
         
-        # Test with uniform spacing
-        uniform_support = [0.0, 1.0, 2.0, 3.0, 4.0]
-        uniform_probs = [0.25, 0.25, 0.25, 0.25, 0.0]  # Last probability is 0
-        uniform_dist = DiscreteNonParametric(uniform_support, uniform_probs)
-        centered_uniform = center_distribution(uniform_dist)
+        # Check that probabilities are renormalized
+        @test sum(probs(cleaned)) ≈ 1.0 atol=1e-10
         
-        expected_uniform_centers = [0.5, 1.5, 2.5, 3.5]
-        @test support(centered_uniform) == expected_uniform_centers
+        # Test with a distribution that has finite intervals (should not change)
+        finite_dist = discretise(Normal(0, 1), 0.5; min_quantile=0.01, max_quantile=0.99)
+        cleaned_finite = remove_infinities(finite_dist)
+        @test length(support(cleaned_finite)) <= length(support(finite_dist))
+        @test sum(probs(cleaned_finite)) ≈ 1.0 atol=1e-10
+    end
+    
+    @testset "left_align_distribution function tests" begin
+        # Create interval-based distribution using discretise function
+        normal_dist = Normal(0, 1)
+        interval_dist = discretise(normal_dist, 0.5; min_quantile=0.01, max_quantile=0.99)
         
-        # Test center_distribution with interval parameter
-        interval = 0.5
-        centered_with_interval = center_distribution(test_dist, interval)
-        @test centered_with_interval isa DiscreteNonParametric
+        # Test left alignment
+        left_aligned = left_align_distribution(interval_dist)
+        @test left_aligned isa DiscreteNonParametric
+        @test eltype(support(left_aligned)) <: Real
         
-        # Check that support is shifted by interval/2
-        expected_shifted = support(test_dist) .+ (interval / 2)
-        @test support(centered_with_interval) == expected_shifted
+        # Check that support uses left bounds (inf) of intervals (after removing infinities)
+        # The alignment functions correctly remove infinite intervals
+        finite_intervals = [interval for interval in support(interval_dist) if isfinite(inf(interval)) && isfinite(sup(interval))]
+        expected_support = [inf(interval) for interval in finite_intervals]
+        @test support(left_aligned) == expected_support
+        @test length(probs(left_aligned)) == length(finite_intervals)  # Should match finite intervals only
+        @test sum(probs(left_aligned)) ≈ 1.0 atol=1e-10
         
-        # Check that probabilities are preserved
-        @test probs(centered_with_interval) == probs(test_dist)
-        @test sum(probs(centered_with_interval)) ≈ 1.0 atol=1e-10
+        # Test with distribution that has been cleaned of infinities
+        infinite_dist = discretise(normal_dist, 0.5; min_quantile=1e-10, max_quantile=1-1e-10)
+        cleaned_and_aligned = left_align_distribution(remove_infinities(infinite_dist))
+        @test eltype(support(cleaned_and_aligned)) <: Real
+        @test all(isfinite, support(cleaned_and_aligned))
+        @test sum(probs(cleaned_and_aligned)) ≈ 1.0 atol=1e-10
         
-        # Test with different interval values
-        for test_interval in [0.1, 1.0, 2.5, 10.0]
-            centered_test = center_distribution(test_dist, test_interval)
-            expected_support = support(test_dist) .+ (test_interval / 2)
-            @test support(centered_test) == expected_support
-            @test probs(centered_test) == probs(test_dist)
-        end
+        # Test with a more controlled example
+        uniform_dist = Uniform(0, 10)
+        uniform_intervals = discretise(uniform_dist, 1.0)
+        left_uniform = left_align_distribution(uniform_intervals)
+        @test eltype(support(left_uniform)) <: Real
+        @test all(isfinite, support(left_uniform))
+    end
+    
+    @testset "centred_distribution function tests" begin
+        # Create interval-based distribution using discretise function
+        normal_dist = Normal(0, 1)
+        interval_dist = discretise(normal_dist, 0.5; min_quantile=0.01, max_quantile=0.99)
         
-        # Test with negative interval
-        negative_interval = -0.3
-        centered_negative = center_distribution(test_dist, negative_interval)
-        expected_negative = support(test_dist) .+ (negative_interval / 2)
-        @test support(centered_negative) == expected_negative
+        # Test centred alignment
+        centred = centred_distribution(interval_dist)
+        @test centred isa DiscreteNonParametric
+        @test eltype(support(centred)) <: Real
+        
+        # Check that support uses midpoints of intervals (after removing infinities)
+        finite_intervals = [interval for interval in support(interval_dist) if isfinite(inf(interval)) && isfinite(sup(interval))]
+        expected_support = [(inf(interval) + sup(interval)) / 2 for interval in finite_intervals]
+        @test support(centred) ≈ expected_support atol=1e-10
+        @test length(probs(centred)) == length(finite_intervals)  # Should match finite intervals only
+        @test sum(probs(centred)) ≈ 1.0 atol=1e-10
+        
+        # Test with uniform intervals for more predictable midpoints
+        uniform_dist = Uniform(0, 10)
+        uniform_intervals = discretise(uniform_dist, 1.0)
+        centred_uniform = centred_distribution(uniform_intervals)
+        
+        # Check that midpoints are correctly calculated
+        uniform_test_intervals = support(uniform_intervals)
+        expected_uniform = [(inf(interval) + sup(interval)) / 2 for interval in uniform_test_intervals]
+        @test support(centred_uniform) ≈ expected_uniform atol=1e-10
+        
+        # Test edge case with narrow distribution
+        narrow_dist = Normal(5, 0.1)  # Very narrow normal distribution
+        narrow_intervals = discretise(narrow_dist, 0.1)
+        centred_narrow = centred_distribution(narrow_intervals)
+        @test eltype(support(centred_narrow)) <: Real
+        @test all(isfinite, support(centred_narrow))
     end
     
     @testset "right_align_distribution function tests" begin
-        # Create a simple discrete distribution for testing
-        support_vals = [1.0, 2.0, 3.0, 4.0, 5.0]
-        probabilities = [0.1, 0.2, 0.4, 0.2, 0.1]
-        test_dist = DiscreteNonParametric(support_vals, probabilities)
+        # Create interval-based distribution using discretise function  
+        normal_dist = Normal(0, 1)
+        interval_dist = discretise(normal_dist, 0.5; min_quantile=0.01, max_quantile=0.99)
         
-        # Test right_align_distribution without interval parameter
-        right_aligned = right_align_distribution(test_dist)
+        # Test right alignment
+        right_aligned = right_align_distribution(interval_dist)
         @test right_aligned isa DiscreteNonParametric
+        @test eltype(support(right_aligned)) <: Real
         
-        # Check that support is shifted to the right (using second through last elements)
-        original_support = support(test_dist)
-        aligned_support = support(right_aligned)
-        expected_right = original_support[2:end]
-        @test aligned_support == expected_right
+        # Check that support uses right bounds (sup) of intervals (after removing infinities)
+        finite_intervals = [interval for interval in support(interval_dist) if isfinite(inf(interval)) && isfinite(sup(interval))]
+        expected_support = [sup(interval) for interval in finite_intervals]
+        @test support(right_aligned) == expected_support
+        @test length(probs(right_aligned)) == length(finite_intervals)  # Should match finite intervals only
+        @test sum(probs(right_aligned)) ≈ 1.0 atol=1e-10
         
-        # Check that probabilities are from first to second-to-last
-        @test probs(right_aligned) == probs(test_dist)[1:end-1]
-        @test sum(probs(right_aligned)) ≈ sum(probabilities[1:end-1]) atol=1e-10
+        # Test with uniform distribution for more predictable behavior
+        uniform_dist = Uniform(0, 10)
+        uniform_intervals = discretise(uniform_dist, 1.0)
+        right_uniform = right_align_distribution(uniform_intervals)
         
-        # Test with uniform spacing
-        uniform_support = [0.0, 1.0, 2.0, 3.0, 4.0]
-        uniform_probs = [0.25, 0.25, 0.25, 0.25, 0.0]  # Last probability is 0
-        uniform_dist = DiscreteNonParametric(uniform_support, uniform_probs)
-        right_aligned_uniform = right_align_distribution(uniform_dist)
+        # Check that all support values are finite and properly aligned
+        @test eltype(support(right_uniform)) <: Real
+        @test all(isfinite, support(right_uniform))
+        @test sum(probs(right_uniform)) ≈ 1.0 atol=1e-10
         
-        expected_uniform_right = [1.0, 2.0, 3.0, 4.0]
-        @test support(right_aligned_uniform) == expected_uniform_right
-        
-        # Test right_align_distribution with interval parameter
-        interval = 0.7
-        right_aligned_with_interval = right_align_distribution(test_dist, interval)
-        @test right_aligned_with_interval isa DiscreteNonParametric
-        
-        # Check that support is shifted by interval
-        expected_shifted = support(test_dist) .+ interval
-        @test support(right_aligned_with_interval) == expected_shifted
-        
-        # Check that probabilities are preserved
-        @test probs(right_aligned_with_interval) == probs(test_dist)
-        @test sum(probs(right_aligned_with_interval)) ≈ 1.0 atol=1e-10
-        
-        # Test with different interval values
-        for test_interval in [0.1, 1.0, 2.5, 10.0, -1.5]
-            aligned_test = right_align_distribution(test_dist, test_interval)
-            expected_support = support(test_dist) .+ test_interval
-            @test support(aligned_test) == expected_support
-            @test probs(aligned_test) == probs(test_dist)
-        end
-        
-        # Test with zero interval
-        zero_interval = 0.0
-        aligned_zero = right_align_distribution(test_dist, zero_interval)
-        @test support(aligned_zero) == support(test_dist)
-        @test probs(aligned_zero) == probs(test_dist)
+        # Verify that right bounds are used
+        uniform_test_intervals = support(uniform_intervals)
+        expected_uniform = [sup(interval) for interval in uniform_test_intervals]
+        @test support(right_uniform) == expected_uniform
     end
     
-    @testset "Edge cases for utility functions" begin
-        # Test with single-point distribution
-        single_support = [5.0]
-        single_probs = [1.0]
-        single_dist = DiscreteNonParametric(single_support, single_probs)
+    @testset "Integration tests with discretise function" begin
+        # Test the complete workflow: discretise -> align
+        normal_dist = Normal(0, 1)
+        discretised = discretise(normal_dist, 0.5; min_quantile=0.01, max_quantile=0.99)
         
-        # center_distribution with single point should error
-        @test_throws ErrorException center_distribution(single_dist)
+        # Test that we can apply all alignment functions
+        left_aligned = left_align_distribution(discretised)
+        centred = centred_distribution(discretised)
+        right_aligned = right_align_distribution(discretised)
         
-        # right_align_distribution with single point should error
-        @test_throws ErrorException right_align_distribution(single_dist)
-
-        # But with interval parameter, should preserve the distribution
-        centered_single_interval = center_distribution(single_dist, 1.0)
-        @test support(centered_single_interval) == [5.5]
-        @test probs(centered_single_interval) == [1.0]
+        @test eltype(support(left_aligned)) <: Real
+        @test eltype(support(centred)) <: Real  
+        @test eltype(support(right_aligned)) <: Real
         
-        right_aligned_single_interval = right_align_distribution(single_dist, 1.0)
-        @test support(right_aligned_single_interval) == [6.0]
-        @test probs(right_aligned_single_interval) == [1.0]
+        @test sum(probs(left_aligned)) ≈ 1.0 atol=1e-10
+        @test sum(probs(centred)) ≈ 1.0 atol=1e-10
+        @test sum(probs(right_aligned)) ≈ 1.0 atol=1e-10
         
-        # Test with two-point distribution
-        two_support = [1.0, 3.0]
-        two_probs = [0.6, 0.4]
-        two_dist = DiscreteNonParametric(two_support, two_probs)
+        # Test that alignment preserves probability mass for cleaned distributions
+        cleaned = remove_infinities(discretised)
+        cleaned_left = left_align_distribution(cleaned)
+        cleaned_centred = centred_distribution(cleaned)
+        cleaned_right = right_align_distribution(cleaned)
         
-        centered_two = center_distribution(two_dist)
-        @test support(centered_two) == [2.0]  # (1 + 3)/2 = 2, but only first prob
-        @test probs(centered_two) == [0.6]
+        @test length(probs(cleaned_left)) == length(probs(cleaned))
+        @test length(probs(cleaned_centred)) == length(probs(cleaned))
+        @test length(probs(cleaned_right)) == length(probs(cleaned))
         
-        right_aligned_two = right_align_distribution(two_dist)
-        @test support(right_aligned_two) == [3.0]  # second support value
-        @test probs(right_aligned_two) == [0.6]    # first probability
+        # Test relationship between alignments for uniform intervals
+        uniform_dist = Uniform(0, 10)
+        uniform_discretised = discretise(uniform_dist, 1.0)
+        uniform_intervals = support(uniform_discretised)
+        
+        if length(uniform_intervals) > 1
+            uniform_left = left_align_distribution(uniform_discretised)
+            uniform_right = right_align_distribution(uniform_discretised)
+            uniform_center = centred_distribution(uniform_discretised)
+            
+            # Check that intervals have consistent structure for finite intervals
+            left_vals = support(uniform_left)
+            right_vals = support(uniform_right)
+            center_vals = support(uniform_center)
+            
+            # Test with finite intervals only
+            finite_indices = findall(i -> isfinite(inf(uniform_intervals[i])) && isfinite(sup(uniform_intervals[i])), 1:length(uniform_intervals))
+            
+            for i in finite_indices[1:min(3, end)]  # Test first few finite intervals
+                interval_width = sup(uniform_intervals[i]) - inf(uniform_intervals[i])
+                if isfinite(interval_width) && interval_width > 0
+                    @test right_vals[i] ≈ left_vals[i] + interval_width atol=1e-10
+                    @test center_vals[i] ≈ left_vals[i] + interval_width/2 atol=1e-10
+                end
+            end
+        end
+        
+        # Test with removal of infinities
+        cleaned = remove_infinities(discretised)
+        cleaned_left = left_align_distribution(cleaned)
+        cleaned_centred = centred_distribution(cleaned)
+        cleaned_right = right_align_distribution(cleaned)
+        
+        @test all(isfinite, support(cleaned_left))
+        @test all(isfinite, support(cleaned_centred))
+        @test all(isfinite, support(cleaned_right))
+    end
+    
+    @testset "Edge cases and error conditions" begin
+        # Test with single interval
+        single_dist = discretise(Normal(0, 0.1), 2.0)  # Wide interval on narrow distribution
+        
+        if length(support(single_dist)) >= 1
+            left_single = left_align_distribution(single_dist)
+            centred_single = centred_distribution(single_dist)
+            right_single = right_align_distribution(single_dist)
+            
+            @test eltype(support(left_single)) <: Real
+            @test eltype(support(centred_single)) <: Real
+            @test eltype(support(right_single)) <: Real
+            
+            @test sum(probs(left_single)) ≈ 1.0 atol=1e-10
+            @test sum(probs(centred_single)) ≈ 1.0 atol=1e-10
+            @test sum(probs(right_single)) ≈ 1.0 atol=1e-10
+        end
+        
+        # Test with distribution that creates extreme values
+        extreme_dist = discretise(Normal(0, 1), 0.5; min_quantile=1e-10, max_quantile=1-1e-10)
+        extreme_cleaned = remove_infinities(extreme_dist)
+        
+        if length(support(extreme_cleaned)) > 0
+            @test all(isfinite, support(left_align_distribution(extreme_cleaned)))
+            @test all(isfinite, support(centred_distribution(extreme_cleaned)))
+            @test all(isfinite, support(right_align_distribution(extreme_cleaned)))
+        end
+        
+        # Test with very small intervals to check numerical stability
+        tiny_dist = discretise(Normal(0, 1), 0.001; min_quantile=0.01, max_quantile=0.99)
+        tiny_cleaned = remove_infinities(tiny_dist)
+        
+        tiny_centred = centred_distribution(tiny_cleaned)
+        @test all(isfinite, support(tiny_centred))
+        @test sum(probs(tiny_centred)) ≈ 1.0 atol=1e-10
     end
 end

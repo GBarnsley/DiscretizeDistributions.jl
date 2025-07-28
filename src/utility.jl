@@ -1,129 +1,144 @@
-@doc """
-    center_distribution(dist::Distributions.DiscreteNonParametric)
+function remove_infinities(
+        dist::Distributions.DiscreteNonParametric{
+            IntervalArithmetic.Interval{T}, P, S, V
+        }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
 
-Center a discrete distribution by shifting support points to the midpoints between consecutive intervals.
+    support = dist.support
+    p = dist.p
+    if isinf(IntervalArithmetic.inf(support[1]))
+        @warn "Support contains interval with negative infinity, removing."
 
-This function takes the support points of a discrete distribution and creates a new distribution
-where each support point is positioned at the center of the interval between consecutive original
-support points. The last probability mass is dropped since there's no interval after the last point.
-
-# Arguments
-- `dist::Distributions.DiscreteNonParametric`: Input discrete distribution
-
-# Returns
-- `DiscreteNonParametric`: New distribution with centered support points
-
-# Examples
-```julia
-using Distributions, DiscretiseDistributions
-
-# Create a distribution with support at [1, 2, 3, 4]
-dist = DiscreteNonParametric([1.0, 2.0, 3.0, 4.0], [0.25, 0.25, 0.25, 0.25])
-
-# Center the distribution - support becomes [1.5, 2.5, 3.5]
-centered = center_distribution(dist)
-```
-"""
-function center_distribution(dist::Distributions.DiscreteNonParametric)
-    if length(dist.support) <= 1
-        error("Cannot center a distribution with one or no support points.")
+        support = support[2:end]
+        p = p[2:end]
     end
-    xs = dist.support[1:(end - 1)] .+ (diff(dist.support) ./ 2)
-    ps = dist.p[1:(end - 1)]
-    return Distributions.DiscreteNonParametric(xs, ps; check_args=false)
+    if isinf(IntervalArithmetic.sup(support[end]))
+        @warn "Support contains interval with positive infinity, removing."
+
+        support = support[1:(end - 1)]
+        p = p[1:(end - 1)]
+    end
+    p = p ./ sum(p)  # Normalize probabilities
+    return Distributions.DiscreteNonParametric(support, p; check_args=false)
 end
 
 @doc """
-    center_distribution(dist::Distributions.DiscreteNonParametric, interval)
+    centred_distribution(dist::Distributions.DiscreteNonParametric{IntervalArithmetic.Interval{T}, ...})
 
-Center a discrete distribution by shifting all support points by half the given interval.
+Convert an interval-based discrete distribution to a centered point-based distribution.
 
-This function shifts all support points of the distribution by `interval / 2`, effectively
-centering the distribution relative to the specified interval. All probability masses are preserved.
+This function takes a discrete distribution with interval support and creates a new distribution
+where each support point is positioned at the center (midpoint) of the corresponding interval.
+Infinite intervals are automatically removed before conversion.
 
 # Arguments
-- `dist::Distributions.DiscreteNonParametric`: Input discrete distribution
-- `interval`: The interval by which to center (support shifted by `interval / 2`)
+- `dist::DiscreteNonParametric{Interval{T}, ...}`: Input discrete distribution with interval support
 
 # Returns
-- `DiscreteNonParametric`: New distribution with shifted support points
+- `DiscreteNonParametric{T, ...}`: New distribution with centered point support
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions
+using Distributions, DiscretiseDistributions, IntervalArithmetic
 
-# Create a distribution
-dist = DiscreteNonParametric([1.0, 2.0, 3.0], [0.3, 0.4, 0.3])
+# Create an interval-based distribution
+intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]
+probs = [0.3, 0.4, 0.3]
+interval_dist = DiscreteNonParametric(intervals, probs, check_args=false)
 
-# Center by interval of 1.0 - support becomes [1.5, 2.5, 3.5]
-centered = center_distribution(dist, 1.0)
+# Convert to centered points
+centered = centred_distribution(interval_dist)
+# Support becomes [0.5, 1.5, 2.5] (midpoints of intervals)
 ```
 """
-function center_distribution(dist::Distributions.DiscreteNonParametric, interval)
-    xs = dist.support .+ (interval / 2)
+function centred_distribution(
+    dist::Distributions.DiscreteNonParametric{
+        IntervalArithmetic.Interval{T}, P, S, V
+    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
+    
+    dist = remove_infinities(dist)
+
+    xs = (IntervalArithmetic.sup.(dist.support) .+ IntervalArithmetic.inf.(dist.support)) ./ 2
+
     return Distributions.DiscreteNonParametric(xs, dist.p)
 end
 
 @doc """
-    right_align_distribution(dist::Distributions.DiscreteNonParametric)
+    left_align_distribution(dist::Distributions.DiscreteNonParametric{IntervalArithmetic.Interval{T}, ...})
 
-Right-align a discrete distribution by shifting probabilities to the next support point.
+Convert an interval-based discrete distribution to a left-aligned point-based distribution.
 
-This function creates a new distribution where each probability mass is associated with
-the next support point (right-aligned). The last probability mass is dropped since
-there's no support point to the right of the last one.
+This function takes a discrete distribution with interval support and creates a new distribution
+where each support point is positioned at the left endpoint (infimum) of the corresponding interval.
+Infinite intervals are automatically removed before conversion.
 
 # Arguments
-- `dist::Distributions.DiscreteNonParametric`: Input discrete distribution
+- `dist::DiscreteNonParametric{Interval{T}, ...}`: Input discrete distribution with interval support
 
 # Returns
-- `DiscreteNonParametric`: New distribution with right-aligned probabilities
+- `DiscreteNonParametric{T, ...}`: New distribution with left-aligned point support
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions
+using Distributions, DiscretiseDistributions, IntervalArithmetic
 
-# Create a distribution with support at [1, 2, 3, 4] and probs [0.2, 0.3, 0.3, 0.2]
-dist = DiscreteNonParametric([1.0, 2.0, 3.0, 4.0], [0.2, 0.3, 0.3, 0.2])
+# Create an interval-based distribution
+intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]
+probs = [0.3, 0.4, 0.3]
+interval_dist = DiscreteNonParametric(intervals, probs, check_args=false)
 
-# Right-align - support becomes [2, 3, 4] with probs [0.2, 0.3, 0.3]
-right_aligned = right_align_distribution(dist)
+# Convert to left-aligned points
+left_aligned = left_align_distribution(interval_dist)
+# Support becomes [0.0, 1.0, 2.0] (left endpoints of intervals)
 ```
 """
-function right_align_distribution(dist::Distributions.DiscreteNonParametric)
-    if length(dist.support) <= 1
-        error("Cannot right-align a distribution with one or no support points.")
-    end
-    return Distributions.DiscreteNonParametric(dist.support[2:end], dist.p[1:(end - 1)]; check_args=false)
+function left_align_distribution(
+    dist::Distributions.DiscreteNonParametric{
+        IntervalArithmetic.Interval{T}, P, S, V
+    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
+    
+    dist = remove_infinities(dist)
+
+    xs = IntervalArithmetic.inf.(dist.support)
+
+    return Distributions.DiscreteNonParametric(xs, dist.p)
 end
 
 @doc """
-    right_align_distribution(dist::Distributions.DiscreteNonParametric, interval)
+    right_align_distribution(dist::Distributions.DiscreteNonParametric{IntervalArithmetic.Interval{T}, ...})
 
-Right-align a discrete distribution by shifting all support points by the given interval.
+Convert an interval-based discrete distribution to a right-aligned point-based distribution.
 
-This function shifts all support points of the distribution by the specified interval,
-effectively moving the entire distribution to the right. All probability masses are preserved.
+This function takes a discrete distribution with interval support and creates a new distribution
+where each support point is positioned at the right endpoint (supremum) of the corresponding interval.
+Infinite intervals are automatically removed before conversion.
 
 # Arguments
-- `dist::Distributions.DiscreteNonParametric`: Input discrete distribution
-- `interval`: The interval by which to shift the support points
+- `dist::DiscreteNonParametric{Interval{T}, ...}`: Input discrete distribution with interval support
 
 # Returns
-- `DiscreteNonParametric`: New distribution with shifted support points
+- `DiscreteNonParametric{T, ...}`: New distribution with right-aligned point support
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions
+using Distributions, DiscretiseDistributions, IntervalArithmetic
 
-# Create a distribution
-dist = DiscreteNonParametric([1.0, 2.0, 3.0], [0.3, 0.4, 0.3])
+# Create an interval-based distribution
+intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]
+probs = [0.3, 0.4, 0.3]
+interval_dist = DiscreteNonParametric(intervals, probs, check_args=false)
 
-# Shift right by 0.5 - support becomes [1.5, 2.5, 3.5]
-right_aligned = right_align_distribution(dist, 0.5)
+# Convert to right-aligned points
+right_aligned = right_align_distribution(interval_dist)
+# Support becomes [1.0, 2.0, 3.0] (right endpoints of intervals)
 ```
 """
-function right_align_distribution(dist::Distributions.DiscreteNonParametric, interval)
-    xs = dist.support .+ (interval)
+function right_align_distribution(dist::Distributions.DiscreteNonParametric{
+        IntervalArithmetic.Interval{T}, P, S, V
+    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
+    
+    dist = remove_infinities(dist)
+
+    xs = IntervalArithmetic.sup.(dist.support)
+
     return Distributions.DiscreteNonParametric(xs, dist.p)
 end
