@@ -14,17 +14,12 @@ function define_bounds(dist::Distributions.DiscreteUnivariateDistribution, inter
     return min_interval:max_interval
 end
 
-function discretise_univariate_discrete(dist, xs)
-    xs_daily = floor.(xs)
-    probability = map(Base.Fix1(Distributions.pdf, dist), xs_daily)
-
-    #set to sum to one
-    probability /= sum(probability)
-
-    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
+function pseudo_cdf(dist::Distributions.DiscreteUnivariateDistribution, x::Real)
+    floor_x = floor(x)
+    return Distributions.cdf(dist, floor_x - 1) + Distributions.pdf(dist, floor_x) * (x - floor_x)
 end
 
-@doc """
+"""
     discretise(dist::Distributions.DiscreteUnivariateDistribution, interval::Real; 
                min_quantile=0.001, max_quantile=0.999)
 
@@ -33,6 +28,9 @@ Discretise a discrete univariate distribution into intervals of fixed width.
 This function groups the support of a discrete distribution into intervals of specified width,
 aggregating probability masses within each interval. This is useful for reducing the granularity
 of discrete distributions or for creating interval-based representations.
+
+This is only sensible with discrete distributions that have finite support that makes sense as a continuous
+distribution, such as Poisson or Binomial distributions. 
 
 # Arguments
 - `dist::Distributions.DiscreteUnivariateDistribution`: The discrete distribution to discretise
@@ -67,46 +65,5 @@ function discretise(dist::Distributions.DiscreteUnivariateDistribution, interval
     
     xs = collect(range * interval)
 
-    return discretise_univariate_discrete(dist, xs)
-end
-
-@doc """
-    discretise(dist::Distributions.DiscreteUnivariateDistribution, interval::AbstractVector)
-
-Discretise a discrete univariate distribution using custom interval boundaries.
-
-This function groups the support of a discrete distribution according to user-specified
-interval boundaries, aggregating probability masses within each interval.
-
-# Arguments
-- `dist::Distributions.DiscreteUnivariateDistribution`: The discrete distribution to discretise
-- `interval::AbstractVector`: Vector of interval boundaries (will be sorted automatically)
-
-# Returns
-- `DiscreteNonParametric`: Discrete distribution with aggregated probability masses
-
-# Details
-The input interval vector is automatically sorted. Probability masses are computed using the
-probability density function (PDF) at floored interval boundaries. The resulting distribution
-has support points at the interval boundaries with aggregated probabilities normalized to sum to 1.
-
-# Examples
-```julia
-using Distributions, DiscretiseDistributions
-
-# Discretise using custom intervals
-poisson_dist = Poisson(3.0)
-custom_intervals = [0, 2, 4, 6, 10, 15]
-discrete_poisson = discretise(poisson_dist, custom_intervals)
-
-# Intervals are sorted automatically
-unsorted_intervals = [10, 0, 4, 2, 15]
-discrete_poisson2 = discretise(poisson_dist, unsorted_intervals)
-```
-"""
-function discretise(dist::Distributions.DiscreteUnivariateDistribution, interval::AbstractVector)
-
-    xs = sort(interval)
-
-    return discretise_univariate_discrete(dist, xs)
+    return discretise(dist, xs)
 end

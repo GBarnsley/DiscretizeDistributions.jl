@@ -1,75 +1,26 @@
-function define_intervals(dist::Distributions.ContinuousUnivariateDistribution, interval, min_quantile, max_quantile)
-    #to avoid issues with precision we'll translate everything into multiples of the interval
-
-    min_value = minimum(dist)
-    if isinf(min_value)
-        #set next value to the interval of given size that contains the minimum quantile
-        finite_minimum = Int((Distributions.quantile(dist, min_quantile) ÷ interval)) - 1
-    else
-        finite_minimum = Int(min_value ÷ interval)
+function define_bounds(dist::Distributions.ContinuousUnivariateDistribution, interval, min_quantile, max_quantile)
+    max_dist_time = maximum(dist)
+    addition = 0
+    if isinf(max_dist_time)
+        max_dist_time = Distributions.quantile(dist, max_quantile)
+        #since its infinite it doesn't hurt to add an extra interval so we actually capture the quantile
+        addition += 1
     end
-    
-    max_value = maximum(dist)
-    if isinf(max_value)
-        #set finite max to the interval of given size that contains the maximum quantile
-        finite_maximum = Int((Distributions.quantile(dist, max_quantile) ÷ interval)) + 1
-    else
-        finite_maximum = Int(max_value ÷ interval)
+    max_interval = Int((max_dist_time ÷ interval)) + addition
+
+    min_dist_time = minimum(dist)
+    subtraction = 0
+    if isinf(min_dist_time)
+        min_dist_time = Distributions.quantile(dist, min_quantile)
+        subtraction += 1
     end
+    min_interval = Int((min_dist_time ÷ interval)) - subtraction
 
-    lower_bound = interval .* collect(finite_minimum:finite_maximum) #ensure we have a zero in the lower bound
-
-    #final additions to capture the tails
-    if min_value != lower_bound[1]
-        lower_bound = vcat([min_value], lower_bound)
-    end
-
-    if max_value != lower_bound[end]
-        upper_bound = vcat(lower_bound[2:end], [max_value])
-    else
-        upper_bound = lower_bound[2:end]
-        lower_bound = lower_bound[1:(end-1)]
-    end
-
-    return IntervalArithmetic.interval(lower_bound, upper_bound)
+    return min_interval:max_interval
 end
 
-#a bit of piracy
-function allunique(A::Vector{IntervalArithmetic.Interval{X}}) where X <: Real
-    if length(A) < 32
-        _indexed_allunique(A)
-    elseif Base.OrderStyle(eltype(A)) === Base.Ordered()
-        a1, rest1 = Iterators.peel(A)::Tuple{Any,Any}
-        a2, rest = Iterators.peel(rest1)::Tuple{Any,Any}
-        if !IntervalArithmetic.isequal_interval(a1, a2)
-            compare = IntervalArithmetic.strictprecedes(a1, a2) ?  IntervalArithmetic.strictprecedes : (a,b) ->  IntervalArithmetic.strictprecedes(b,a)
-            for a in rest
-                if compare(a2, a)
-                    a2 = a
-                elseif IntervalArithmetic.isequal_interval(a2, a)
-                    return false
-                else
-                    return Base._hashed_allunique(A)
-                end
-            end
-        else # isequal(a1, a2)
-            return false
-        end
-        return true
-    else
-        Base._hashed_allunique(A)
-    end
-end
-
-function discretise_univariate_continuous(dist, xs)
-    xs_values = vcat(IntervalArithmetic.inf.(xs), [IntervalArithmetic.sup(xs[end])])
-    
-    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs_values))
-
-    #set to sum to one
-    probability /= sum(probability)
-    allunique(xs)
-    return Distributions.DiscreteNonParametric(xs, probability)
+function pseudo_cdf(dist::Distributions.ContinuousUnivariateDistribution, x::Real)
+    return Distributions.cdf(dist, x - 1)
 end
 
 @doc """
@@ -113,20 +64,21 @@ function discretise(dist::Distributions.ContinuousUnivariateDistribution, interv
 
     xs = define_intervals(dist, interval, min_quantile, max_quantile)
 
-    return discretise_univariate_continuous(dist, xs)
+    return discretise(dist, xs)
 end
 
 @doc """
-    discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
+    discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
 
-Discretise a continuous univariate distribution using custom interval boundaries.
+Discretise a univariate distribution using custom interval boundaries.
 
 This function converts a continuous distribution into a discrete one using user-specified
 interval boundaries. The probability mass in each interval is computed using the cumulative
-distribution function (CDF).
+distribution function (CDF) or pseudo CDF (which assume a discrete distribution only supports integers
+and is uniform between support points).
 
 # Arguments
-- `dist::Distributions.ContinuousUnivariateDistribution`: The continuous distribution to discretise
+- `dist::Distributions.UnivariateDistribution`: The distribution to discretise
 - `interval::AbstractVector`: Vector of interval boundaries (will be sorted automatically)
 
 # Returns
@@ -149,11 +101,22 @@ discrete_normal = discretise(normal_dist, custom_intervals)
 # The intervals will be sorted automatically if needed
 unsorted_intervals = [8.0, 0.0, 4.0, 2.0, 10.0]
 discrete_normal2 = discretise(normal_dist, unsorted_intervals)
+
+# Discrete distribution
+poisson_dist = Poisson(3.0)
+discrete_poisson = discretise(poisson_dist, [0.5, 2, 4, 6, 8, 10])
 ```
 """
-function discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
+function discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
 
     xs = sort(interval)
 
-    return discretise_univariate_continuous(dist, xs)
+    probability = diff(pseudo_cdf.(dist, xs))
+
+    xs = xs[1:(end-1)]
+
+    #set to sum to one
+    probability /= sum(probability)
+
+    return Distributions.DiscreteNonParametric(xs, probability)
 end
