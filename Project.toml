@@ -1,7 +1,7 @@
 name = "DiscretiseDistributions"
 uuid = "1dbf0e27-43cd-4e03-8ecf-3f7be9d12b15"
 authors = ["GBarnsley <gregbarnsley@hotmail.co.uk>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -15,6 +15,7 @@ Test = "1.11.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [targets]
-test = ["Test"]
+test = ["Test", "Statistics"]
