@@ -20,7 +20,7 @@ function define_bounds(dist::Distributions.ContinuousUnivariateDistribution, int
 end
 
 function discretise_univariate_continuous(dist, xs)
-    probability = diff(Distributions.cdf(dist, xs))
+    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs))
 
     xs = xs[1:(end-1)]
 
@@ -30,6 +30,43 @@ function discretise_univariate_continuous(dist, xs)
     return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
 end
 
+@doc """
+    discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::Real; 
+               min_quantile=0.001, max_quantile=0.999)
+
+Discretise a continuous univariate distribution into a discrete distribution using fixed intervals.
+
+This function converts a continuous distribution into a discrete one by dividing the distribution's
+support into intervals of fixed width and computing the probability mass in each interval using
+the cumulative distribution function (CDF).
+
+# Arguments
+- `dist::Distributions.ContinuousUnivariateDistribution`: The continuous distribution to discretise
+- `interval::Real`: The width of each discretisation interval
+- `min_quantile=0.001`: Lower quantile bound for unbounded distributions
+- `max_quantile=0.999`: Upper quantile bound for unbounded distributions
+
+# Returns
+- `DiscreteNonParametric`: Discrete distribution with probability masses at interval boundaries
+
+# Details
+For bounded distributions, the natural bounds are used. For unbounded distributions, the bounds
+are determined using the specified quantiles. The probability mass in each interval is computed
+as the difference in CDF values at the interval boundaries, ensuring the total probability sums to 1.
+
+# Examples
+```julia
+using Distributions, DiscretiseDistributions
+
+# Discretise a normal distribution with interval width 0.5
+normal_dist = Normal(0, 1)
+discrete_normal = discretise(normal_dist, 0.5)
+
+# Discretise an exponential distribution with custom quantiles
+exp_dist = Exponential(2.0)
+discrete_exp = discretise(exp_dist, 0.1; min_quantile=0.01, max_quantile=0.95)
+```
+"""
 function discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::Real; min_quantile = 0.001, max_quantile=0.999)
 
     range = define_bounds(dist, interval, min_quantile, max_quantile)
@@ -39,6 +76,41 @@ function discretise(dist::Distributions.ContinuousUnivariateDistribution, interv
     return discretise_univariate_continuous(dist, xs)
 end
 
+@doc """
+    discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
+
+Discretise a continuous univariate distribution using custom interval boundaries.
+
+This function converts a continuous distribution into a discrete one using user-specified
+interval boundaries. The probability mass in each interval is computed using the cumulative
+distribution function (CDF).
+
+# Arguments
+- `dist::Distributions.ContinuousUnivariateDistribution`: The continuous distribution to discretise
+- `interval::AbstractVector`: Vector of interval boundaries (will be sorted automatically)
+
+# Returns
+- `DiscreteNonParametric`: Discrete distribution with probability masses at specified boundaries
+
+# Details
+The input interval vector is automatically sorted. Probability masses are computed as differences
+in CDF values between consecutive boundaries. The resulting discrete distribution has support
+points at the interval boundaries (excluding the last boundary) with corresponding probabilities.
+
+# Examples
+```julia
+using Distributions, DiscretiseDistributions
+
+# Discretise using custom intervals
+normal_dist = Normal(5, 2)
+custom_intervals = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0]
+discrete_normal = discretise(normal_dist, custom_intervals)
+
+# The intervals will be sorted automatically if needed
+unsorted_intervals = [8.0, 0.0, 4.0, 2.0, 10.0]
+discrete_normal2 = discretise(normal_dist, unsorted_intervals)
+```
+"""
 function discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
 
     xs = sort(interval)
