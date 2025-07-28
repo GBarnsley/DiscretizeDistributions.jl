@@ -1,5 +1,5 @@
 @doc raw"""
-# discretizeDistributions.jl
+# DiscretizeDistributions.jl
 
 A Julia package for discretising continuous and discrete probability distributions into interval-based discrete
 representations with flexible alignment options.
@@ -26,10 +26,10 @@ The package follows a two-stage approach:
 ## Examples
 
 ```julia
-using Distributions, discretizeDistributions
+using Distributions, DiscretizeDistributions
 using IntervalArithmetic
 
-# discretize a continuous distribution (returns interval-based distribution)
+# Discretize a continuous distribution (returns interval-based distribution)
 normal_dist = Normal(0, 1)
 discrete_intervals = discretize(normal_dist, 0.5)  # Support: intervals like [-1.0, -0.5), [-0.5, 0.0), etc.
 
@@ -42,12 +42,12 @@ right_aligned = right_align_distribution(discrete_intervals) # Support: [-0.5, 0
 custom_intervals = [-3.0, -1.0, 0.0, 1.0, 3.0]
 discrete_custom = discretize(normal_dist, custom_intervals)
 
-# discretize a discrete distribution
+# Discretize a discrete distribution
 poisson_dist = Poisson(3.0)
 discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 2
 ```
 """
-module discretizeDistributions
+module DiscretizeDistributions
     export discretize
     export left_align_distribution, centred_distribution, right_align_distribution
     

@@ -38,7 +38,7 @@ Infinite intervals are automatically removed before conversion.
 
 # Examples
 ```julia
-using Distributions, discretizeDistributions, IntervalArithmetic
+using Distributions, DiscretizeDistributions, IntervalArithmetic
 
 # Create an interval-based distribution
 intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]
@@ -79,7 +79,7 @@ Infinite intervals are automatically removed before conversion.
 
 # Examples
 ```julia
-using Distributions, discretizeDistributions, IntervalArithmetic
+using Distributions, DiscretizeDistributions, IntervalArithmetic
 
 # Create an interval-based distribution
 intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]
@@ -120,7 +120,7 @@ Infinite intervals are automatically removed before conversion.
 
 # Examples
 ```julia
-using Distributions, discretizeDistributions, IntervalArithmetic
+using Distributions, DiscretizeDistributions, IntervalArithmetic
 
 # Create an interval-based distribution
 intervals = [interval(0.0, 1.0), interval(1.0, 2.0), interval(2.0, 3.0)]

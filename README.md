@@ -1,14 +1,14 @@
-# discretizeDistributions.jl
+# DiscretizeDistributions.jl
 
-[![Build Status](https://github.com/GBarnsley/discretizeDistributions.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/GBarnsley/discretizeDistributions.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://GBarnsley.github.io/discretizeDistributions.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://GBarnsley.github.io/discretizeDistributions.jl/dev)
+[![Build Status](https://github.com/GBarnsley/DiscretizeDistributions.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/GBarnsley/DiscretizeDistributions.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://GBarnsley.github.io/DiscretizeDistributions.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://GBarnsley.github.io/DiscretizeDistributions.jl/dev)
 
 A Julia package for discretising continuous and discrete probability distributions into interval-based discrete representations with flexible alignment options.
 
 ## Overview
 
-discretizeDistributions.jl provides functionality to convert probability distributions into discrete forms using a robust two-stage approach:
+DiscretizeDistributions.jl provides functionality to convert probability distributions into discrete forms using a robust two-stage approach:
 
 1. **Backend discretisation**: Creates discrete distributions with `IntervalArithmetic.Interval` support representing probability masses over intervals
 2. **Alignment utilities**: Convert interval-based distributions to point-based distributions for final output, if needed
@@ -25,7 +25,7 @@ discretizeDistributions.jl provides functionality to convert probability distrib
 
 ```julia
 using Pkg
-Pkg.add("discretizeDistributions")
+Pkg.add("DiscretizeDistributions")
 ```
 
 ## Quick Start
@@ -34,9 +34,9 @@ We recommend using rational numbers for interval definitions to maintain precisi
 
 ```julia
 using Distributions, IntervalArithmetic
-using discretizeDistributions
+using DiscretizeDistributions
 
-# discretize a continuous distribution (returns interval-based distribution)
+# Discretize a continuous distribution (returns interval-based distribution)
 normal_dist = Normal(0.0, 1.0)
 discrete_intervals = discretize(normal_dist, 1//10)  # Returns intervals like [0.0, 0.1), [0.1, 0.2), etc.
 
@@ -57,7 +57,7 @@ println("Automatic bounds: ", minimum(discrete_intervals.support), " to ", maxim
 discrete_truncated = discretize(truncated(Normal(), -1.1, 5.13), 1//10)
 println("Truncated bounds: ", minimum(discrete_truncated.support), " to ", maximum(discrete_truncated.support))
 
-# discretize a discrete distribution
+# Discretize a discrete distribution
 poisson_dist = Poisson(3.0)
 discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 2
 

@@ -1,4 +1,4 @@
-# discretize Distributions.jl
+# Discretize Distributions.jl
 
 A Julia package for converting continuous and discrete probability distributions into discrete representations with interval-based support using `IntervalArithmetic.jl`.
 
@@ -28,9 +28,9 @@ All methods return a `DiscreteNonParametric` distribution with `IntervalArithmet
 ### Working with Results
 
 ```julia
-using Distributions, discretizeDistributions, IntervalArithmetic
+using Distributions, DiscretizeDistributions, IntervalArithmetic
 
-# discretize a normal distribution
+# Discretize a normal distribution
 normal_dist = Normal(0, 1)
 interval_dist = discretize(normal_dist, 0.5)
 
@@ -113,7 +113,7 @@ intervals = [
     interval(2.0, Inf)       # Semi-infinite interval
 ]
 
-# discretize using these intervals
+# Discretize using these intervals
 normal_dist = Normal(0, 1)
 discrete_custom = discretize(normal_dist, intervals)
 ```

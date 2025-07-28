@@ -1,7 +1,7 @@
 @testset "Utility function tests for interval-based backend" begin
     
     # Import the internal function for testing
-    import discretizeDistributions: remove_infinities
+    import DiscretizeDistributions: remove_infinities
     
     @testset "remove_infinities function tests" begin
         # Create a distribution using discretize function then manually add infinite intervals for testing

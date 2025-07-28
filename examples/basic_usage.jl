@@ -1,16 +1,16 @@
 #!/usr/bin/env julia
 
 """
-Example script demonstrating discretizeDistributions.jl functionality
+Example script demonstrating DiscretizeDistributions.jl functionality
 
 This script shows how to use the package to discretize various types of distributions
 and apply different alignment transformations.
 """
 
 using Distributions
-using discretizeDistributions
+using DiscretizeDistributions
 
-println("=== discretizeDistributions.jl Examples ===\n")
+println("=== DiscretizeDistributions.jl Examples ===\n")
 
 # Example 1: Discretising a Normal distribution
 println("1. Discretising a Normal distribution")
@@ -19,7 +19,7 @@ println("   Original: Normal(μ=0, σ=1)")
 normal_dist = Normal(0, 1)
 discrete_normal = discretize(normal_dist, 0.5)
 
-println("   discretized with interval 0.5:")
+println("   Discretized with interval 0.5:")
 println("   Support: ", support(discrete_normal))
 println("   Probabilities: ", round.(probs(discrete_normal), digits=4))
 println("   Total probability: ", sum(probs(discrete_normal)))
@@ -42,7 +42,7 @@ println("   Original: Exponential(λ=2.0)")
 exp_dist = Exponential(2.0)
 discrete_exp = discretize(exp_dist, 0.2; max_quantile=0.95)
 
-println("   discretized with interval 0.2 (95% quantile bound):")
+println("   Discretized with interval 0.2 (95% quantile bound):")
 println("   Support: ", support(discrete_exp)[1:min(10, end)], length(support(discrete_exp)) > 10 ? "..." : "")
 println("   First 5 probabilities: ", round.(probs(discrete_exp)[1:min(5, end)], digits=4))
 println()
@@ -94,7 +94,7 @@ println("   Original: Uniform(0, 10)")
 uniform_dist = Uniform(0, 10)
 discrete_uniform = discretize(uniform_dist, 1.0)
 
-println("   discretized with interval 1.0:")
+println("   Discretized with interval 1.0:")
 println("   Support: ", support(discrete_uniform))
 println("   Probabilities: ", round.(probs(discrete_uniform), digits=4))
 println("   Note: All probabilities are equal for uniform distribution")
