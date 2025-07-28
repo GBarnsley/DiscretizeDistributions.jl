@@ -1,12 +1,12 @@
-using Documenter, DiscretiseDistributions
+using Documenter, discretizeDistributions
 
 makedocs(
-    sitename="Discretise Distributions.jl Distributions",
+    sitename="discretize Distributions.jl Distributions",
     pages = [
         "index.md"
     ]
 )
 
 deploydocs(
-    repo = "github.com/GBarnsley/DiscretiseDistributions.jl.git",
+    repo = "github.com/GBarnsley/discretizeDistributions.jl.git",
 )

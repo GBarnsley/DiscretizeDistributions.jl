@@ -51,17 +51,17 @@ function pseudo_cdf(dist::Distributions.DiscreteUnivariateDistribution, x::Real)
 end
 
 @doc """
-    discretise(dist::Distributions.UnivariateDistribution, interval::Real; 
+    discretize(dist::Distributions.UnivariateDistribution, interval::Real; 
                min_quantile=0.001, max_quantile=0.999)
 
-Discretise a univariate distribution into an interval-based discrete distribution using fixed intervals.
+discretize a univariate distribution into an interval-based discrete distribution using fixed intervals.
 
 This function converts a univariate distribution into a discrete one by dividing the distribution's
 support into intervals of fixed width and computing the probability mass in each interval. The 
 resulting distribution has `IntervalArithmetic.Interval` objects as support points.
 
 # Arguments
-- `dist::Distributions.UnivariateDistribution`: The distribution to discretise (continuous or discrete)
+- `dist::Distributions.UnivariateDistribution`: The distribution to discretize (continuous or discrete)
 - `interval::Real`: The width of each discretisation interval
 - `min_quantile=0.001`: Lower quantile bound for unbounded distributions
 - `max_quantile=0.999`: Upper quantile bound for unbounded distributions
@@ -76,40 +76,40 @@ using the CDF for continuous distributions or a pseudo-CDF for discrete distribu
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions, IntervalArithmetic
+using Distributions, discretizeDistributions, IntervalArithmetic
 
-# Discretise a normal distribution with interval width 0.5
+# discretize a normal distribution with interval width 0.5
 normal_dist = Normal(0, 1)
-discrete_intervals = discretise(normal_dist, 0.5)
+discrete_intervals = discretize(normal_dist, 0.5)
 # Returns distribution with support like [interval(-∞, -3.5), interval(-3.5, -3.0), ...]
 
 # Convert to point-based distributions if needed
 left_aligned = left_align_distribution(discrete_intervals)    # [-3.5, -3.0, -2.5, ...]
 centered = centred_distribution(discrete_intervals)          # [-3.25, -2.75, -2.25, ...]
 
-# Discretise a discrete distribution
+# discretize a discrete distribution
 poisson_dist = Poisson(3.0)
-discrete_poisson = discretise(poisson_dist, 2)
+discrete_poisson = discretize(poisson_dist, 2)
 ```
 """
-function discretise(dist::Distributions.UnivariateDistribution, interval::Real; min_quantile = 0.001, max_quantile=0.999)
+function discretize(dist::Distributions.UnivariateDistribution, interval::Real; min_quantile = 0.001, max_quantile=0.999)
 
     xs = define_intervals(dist, interval, min_quantile, max_quantile)
 
-    return discretise(dist, xs)
+    return discretize(dist, xs)
 end
 
 @doc """
-    discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
+    discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
 
-Discretise a univariate distribution using custom interval boundaries.
+discretize a univariate distribution using custom interval boundaries.
 
 This function converts a univariate distribution into a discrete one using user-specified
 interval boundaries. The resulting distribution has `IntervalArithmetic.Interval` objects 
 as support points representing the probability mass in each interval.
 
 # Arguments
-- `dist::Distributions.UnivariateDistribution`: The distribution to discretise
+- `dist::Distributions.UnivariateDistribution`: The distribution to discretize
 - `interval::AbstractVector`: Vector of interval boundaries (will be sorted automatically)
 
 # Returns
@@ -123,12 +123,12 @@ intervals `[a_i, a_{i+1})`.
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions, IntervalArithmetic
+using Distributions, discretizeDistributions, IntervalArithmetic
 
-# Discretise using custom intervals
+# discretize using custom intervals
 normal_dist = Normal(5, 2)
 custom_intervals = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0]
-discrete_intervals = discretise(normal_dist, custom_intervals)
+discrete_intervals = discretize(normal_dist, custom_intervals)
 # Support: [interval(-∞, 0.0), interval(0.0, 2.0), ..., interval(10.0, ∞)]
 
 # Convert to different alignments
@@ -138,10 +138,10 @@ right_points = right_align_distribution(discrete_intervals)
 
 # Discrete distribution with custom intervals
 poisson_dist = Poisson(3.0)
-discrete_poisson = discretise(poisson_dist, [0.5, 2, 4, 6, 8, 10])
+discrete_poisson = discretize(poisson_dist, [0.5, 2, 4, 6, 8, 10])
 ```
 """
-function discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
+function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
     
     xs = sort(interval)
 
@@ -157,21 +157,21 @@ function discretise(dist::Distributions.UnivariateDistribution, interval::Abstra
 
     xs = IntervalArithmetic.interval.(xs[1:(end-1)], xs[2:end])
 
-    return discretise(dist, xs)
+    return discretize(dist, xs)
 end
 
 @doc """
-    discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector{IntervalArithmetic.Interval{X}}) where X <: Real
+    discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector{IntervalArithmetic.Interval{X}}) where X <: Real
 
-Discretise a univariate distribution using pre-constructed interval objects.
+discretize a univariate distribution using pre-constructed interval objects.
 
 This function converts a univariate distribution into a discrete one using user-specified
 `IntervalArithmetic.Interval` objects. This is the core discretization method that all other
-`discretise` methods ultimately call. The resulting distribution has the same interval objects
+`discretize` methods ultimately call. The resulting distribution has the same interval objects
 as support points with computed probability masses.
 
 # Arguments
-- `dist::Distributions.UnivariateDistribution`: The distribution to discretise
+- `dist::Distributions.UnivariateDistribution`: The distribution to discretize
 - `interval::AbstractVector{IntervalArithmetic.Interval{X}}`: Vector of pre-constructed intervals
 
 # Returns
@@ -184,18 +184,18 @@ resulting probabilities are normalized to sum to 1.
 
 # Examples
 ```julia
-using Distributions, DiscretiseDistributions, IntervalArithmetic
+using Distributions, discretizeDistributions, IntervalArithmetic
 
 # Create intervals manually
 intervals = [interval(-1.0, 0.0), interval(0.0, 1.0), interval(1.0, 2.0)]
 
-# Discretise using these intervals
+# discretize using these intervals
 normal_dist = Normal(0, 1)
-discrete_intervals = discretise(normal_dist, intervals)
+discrete_intervals = discretize(normal_dist, intervals)
 # Each interval gets probability mass according to the normal distribution
 ```
 """
-function discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector{IntervalArithmetic.Interval{X}}) where X <: Real
+function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector{IntervalArithmetic.Interval{X}}) where X <: Real
     
     xs_values = vcat(IntervalArithmetic.inf.(interval), [IntervalArithmetic.sup(interval[end])])
 

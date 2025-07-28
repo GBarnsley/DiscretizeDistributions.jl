@@ -2,9 +2,9 @@
     using Statistics  # For mean and var
     
     @testset "Backend interval creation" begin
-        # Test that discretise returns interval-based distributions
+        # Test that discretize returns interval-based distributions
         normal_dist = Normal(0, 1)
-        discrete_intervals = discretise(normal_dist, 0.5)
+        discrete_intervals = discretize(normal_dist, 0.5)
         
         @test discrete_intervals isa DiscreteNonParametric
         @test eltype(support(discrete_intervals)) <: Interval
@@ -18,14 +18,14 @@
         
         # Test with different interval sizes
         for interval_size in [0.1, 0.5, 1.0, 2.0]
-            discrete_test = discretise(normal_dist, interval_size)
+            discrete_test = discretize(normal_dist, interval_size)
             @test eltype(support(discrete_test)) <: Interval
             @test sum(probs(discrete_test)) ≈ 1.0 atol=1e-10
         end
         
         # Test with discrete distribution
         poisson_dist = Poisson(3.0)
-        discrete_poisson = discretise(poisson_dist, 1.0)
+        discrete_poisson = discretize(poisson_dist, 1.0)
         @test eltype(support(discrete_poisson)) <: Interval
         @test sum(probs(discrete_poisson)) ≈ 1.0 atol=1e-10
     end
@@ -33,7 +33,7 @@
     @testset "Custom interval boundaries" begin
         normal_dist = Normal(0, 1)
         custom_boundaries = [-2.0, -1.0, 0.0, 1.0, 2.0]
-        discrete_custom = discretise(normal_dist, custom_boundaries)
+        discrete_custom = discretize(normal_dist, custom_boundaries)
         
         @test eltype(support(discrete_custom)) <: Interval
         @test sum(probs(discrete_custom)) ≈ 1.0 atol=1e-10
@@ -44,7 +44,7 @@
         
         # Test with unsorted boundaries
         unsorted_boundaries = [1.0, -1.0, 2.0, 0.0, -2.0]
-        discrete_unsorted = discretise(normal_dist, unsorted_boundaries)
+        discrete_unsorted = discretize(normal_dist, unsorted_boundaries)
         @test eltype(support(discrete_unsorted)) <: Interval
         @test sum(probs(discrete_unsorted)) ≈ 1.0 atol=1e-10
     end
@@ -52,7 +52,7 @@
     @testset "Quantile bounds for unbounded distributions" begin
         # Test exponential distribution (unbounded above)
         exp_dist = Exponential(1.0)
-        discrete_exp = discretise(exp_dist, 0.5)
+        discrete_exp = discretize(exp_dist, 0.5)
         
         @test eltype(support(discrete_exp)) <: Interval
         @test sum(probs(discrete_exp)) ≈ 1.0 atol=1e-10
@@ -62,14 +62,14 @@
         @test sum(probs(discrete_exp)) ≈ 1.0 atol=1e-10
         
         # Test with custom quantiles
-        discrete_exp_custom = discretise(exp_dist, 0.1; min_quantile=0.01, max_quantile=0.95)
+        discrete_exp_custom = discretize(exp_dist, 0.1; min_quantile=0.01, max_quantile=0.95)
         @test eltype(support(discrete_exp_custom)) <: Interval
         @test sum(probs(discrete_exp_custom)) ≈ 1.0 atol=1e-10
     end
     
     @testset "Interval properties and consistency" begin
         normal_dist = Normal(0, 1)
-        discrete_intervals = discretise(normal_dist, 0.5)
+        discrete_intervals = discretize(normal_dist, 0.5)
         
         intervals = support(discrete_intervals)
         
@@ -85,7 +85,7 @@
         
         # Test that probabilities correspond to interval widths for uniform distribution
         uniform_dist = Uniform(0, 10)
-        discrete_uniform = discretise(uniform_dist, 1.0)
+        discrete_uniform = discretize(uniform_dist, 1.0)
         uniform_intervals = support(discrete_uniform)
         uniform_probs = probs(discrete_uniform)
         
@@ -112,7 +112,7 @@
         
         # Test with rational interval size
         rational_interval = 1//10
-        discrete_rational = discretise(normal_dist, rational_interval)
+        discrete_rational = discretize(normal_dist, rational_interval)
         
         @test eltype(support(discrete_rational)) <: Interval
         @test sum(probs(discrete_rational)) ≈ 1.0 atol=1e-10
@@ -135,23 +135,23 @@
         normal_dist = Normal(0, 1)
         
         # Test with very small intervals
-        discrete_small = discretise(normal_dist, 1e-3)
+        discrete_small = discretize(normal_dist, 1e-3)
         @test eltype(support(discrete_small)) <: Interval
         @test sum(probs(discrete_small)) ≈ 1.0 atol=1e-10
         
         # Test with very large intervals
-        discrete_large = discretise(normal_dist, 10.0)
+        discrete_large = discretize(normal_dist, 10.0)
         @test eltype(support(discrete_large)) <: Interval
         @test sum(probs(discrete_large)) ≈ 1.0 atol=1e-10
         
         # Test with single custom interval
         single_boundary = [0.0, 1.0]
-        discrete_single = discretise(normal_dist, single_boundary)
+        discrete_single = discretize(normal_dist, single_boundary)
         @test eltype(support(discrete_single)) <: Interval
         @test sum(probs(discrete_single)) ≈ 1.0 atol=1e-10
         
         # Test extreme quantiles
-        discrete_extreme = discretise(normal_dist, 0.1; min_quantile=1e-6, max_quantile=1-1e-6)
+        discrete_extreme = discretize(normal_dist, 0.1; min_quantile=1e-6, max_quantile=1-1e-6)
         @test eltype(support(discrete_extreme)) <: Interval
         @test sum(probs(discrete_extreme)) ≈ 1.0 atol=1e-10
     end

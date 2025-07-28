@@ -1,5 +1,5 @@
 @doc raw"""
-# DiscretiseDistributions.jl
+# discretizeDistributions.jl
 
 A Julia package for discretising continuous and discrete probability distributions into interval-based discrete
 representations with flexible alignment options.
@@ -18,7 +18,7 @@ The package follows a two-stage approach:
 ## Exported Functions
 
 ### Main Functions
-- [`discretise`](@ref): Convert distributions into interval-based discrete representations
+- [`discretize`](@ref): Convert distributions into interval-based discrete representations
 - [`left_align_distribution`](@ref): Convert intervals to left-aligned point values
 - [`centred_distribution`](@ref): Convert intervals to centered point values  
 - [`right_align_distribution`](@ref): Convert intervals to right-aligned point values
@@ -26,12 +26,12 @@ The package follows a two-stage approach:
 ## Examples
 
 ```julia
-using Distributions, DiscretiseDistributions
+using Distributions, discretizeDistributions
 using IntervalArithmetic
 
-# Discretise a continuous distribution (returns interval-based distribution)
+# discretize a continuous distribution (returns interval-based distribution)
 normal_dist = Normal(0, 1)
-discrete_intervals = discretise(normal_dist, 0.5)  # Support: intervals like [-1.0, -0.5), [-0.5, 0.0), etc.
+discrete_intervals = discretize(normal_dist, 0.5)  # Support: intervals like [-1.0, -0.5), [-0.5, 0.0), etc.
 
 # Convert to different alignments
 left_aligned = left_align_distribution(discrete_intervals)    # Support: [-1.0, -0.5, 0.0, ...]
@@ -40,15 +40,15 @@ right_aligned = right_align_distribution(discrete_intervals) # Support: [-0.5, 0
 
 # Use custom intervals
 custom_intervals = [-3.0, -1.0, 0.0, 1.0, 3.0]
-discrete_custom = discretise(normal_dist, custom_intervals)
+discrete_custom = discretize(normal_dist, custom_intervals)
 
-# Discretise a discrete distribution
+# discretize a discrete distribution
 poisson_dist = Poisson(3.0)
-discrete_poisson = discretise(poisson_dist, 2)  # Group into intervals of width 2
+discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 2
 ```
 """
-module DiscretiseDistributions
-    export discretise
+module discretizeDistributions
+    export discretize
     export left_align_distribution, centred_distribution, right_align_distribution
     
     import Distributions, IntervalArithmetic

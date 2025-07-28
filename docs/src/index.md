@@ -1,8 +1,8 @@
-# Discretise Distributions.jl
+# discretize Distributions.jl
 
 A Julia package for converting continuous and discrete probability distributions into discrete representations with interval-based support using `IntervalArithmetic.jl`.
 
-The package provides functions to discretise univariate distributions into `DiscreteNonParametric` distributions where the support consists of `IntervalArithmetic.Interval` objects. Each interval `[a, b]` represents a probability mass over that range, computed using the cumulative distribution function (CDF) for continuous distributions or aggregated probability mass function (PMF) for discrete distributions.
+The package provides functions to discretize univariate distributions into `DiscreteNonParametric` distributions where the support consists of `IntervalArithmetic.Interval` objects. Each interval `[a, b]` represents a probability mass over that range, computed using the cumulative distribution function (CDF) for continuous distributions or aggregated probability mass function (PMF) for discrete distributions.
 
 ## Limitations
 
@@ -17,22 +17,22 @@ The package provides functions to discretise univariate distributions into `Disc
 
 ## API Overview
 
-The package provides three main `discretise` methods:
+The package provides three main `discretize` methods:
 
-1. **Fixed intervals**: `discretise(dist, interval_width)` - Creates uniform intervals of specified width
-2. **Custom boundaries**: `discretise(dist, boundaries)` - Uses custom interval boundaries  
-3. **Pre-constructed intervals**: `discretise(dist, intervals)` - Uses pre-built `Interval` objects
+1. **Fixed intervals**: `discretize(dist, interval_width)` - Creates uniform intervals of specified width
+2. **Custom boundaries**: `discretize(dist, boundaries)` - Uses custom interval boundaries  
+3. **Pre-constructed intervals**: `discretize(dist, intervals)` - Uses pre-built `Interval` objects
 
 All methods return a `DiscreteNonParametric` distribution with `IntervalArithmetic.Interval` support.
 
 ### Working with Results
 
 ```julia
-using Distributions, DiscretiseDistributions, IntervalArithmetic
+using Distributions, discretizeDistributions, IntervalArithmetic
 
-# Discretise a normal distribution
+# discretize a normal distribution
 normal_dist = Normal(0, 1)
-interval_dist = discretise(normal_dist, 0.5)
+interval_dist = discretize(normal_dist, 0.5)
 
 # The result has interval support
 support(interval_dist)  # Vector of Interval{Float64} objects
@@ -75,11 +75,11 @@ For distributions with infinite support, control truncation with quantile bounds
 ```julia
 # Normal distribution - unbounded in both directions  
 normal_dist = Normal(0, 1)
-discrete_normal = discretise(normal_dist, 0.2; min_quantile=0.005, max_quantile=0.995)
+discrete_normal = discretize(normal_dist, 0.2; min_quantile=0.005, max_quantile=0.995)
 
 # Exponential distribution - unbounded above
 exp_dist = Exponential(1.0)  
-discrete_exp = discretise(exp_dist, 0.1; max_quantile=0.99)
+discrete_exp = discretize(exp_dist, 0.1; max_quantile=0.99)
 
 # Result includes infinite tail intervals
 support(discrete_exp)  # [..., interval(4.5, 5.0), interval(5.0, ∞)]
@@ -92,7 +92,7 @@ Create non-uniform discretisations with custom boundaries:
 ```julia
 # Fine resolution near zero, coarser elsewhere
 custom_boundaries = [-5.0, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 5.0]
-discrete_custom = discretise(Normal(0, 1), custom_boundaries)
+discrete_custom = discretize(Normal(0, 1), custom_boundaries)
 
 # Results in intervals: [(-∞,-5], [-5,-2], [-2,-1], ..., [5,∞)]
 length(support(discrete_custom))  # 10 intervals (8 from boundaries + 2 infinite tails)
@@ -113,13 +113,13 @@ intervals = [
     interval(2.0, Inf)       # Semi-infinite interval
 ]
 
-# Discretise using these intervals
+# discretize using these intervals
 normal_dist = Normal(0, 1)
-discrete_custom = discretise(normal_dist, intervals)
+discrete_custom = discretize(normal_dist, intervals)
 ```
 
 ```@docs
-discretise
+discretize
 left_align_distribution
 centred_distribution
 right_align_distribution

@@ -1,25 +1,25 @@
 #!/usr/bin/env julia
 
 """
-Example script demonstrating DiscretiseDistributions.jl functionality
+Example script demonstrating discretizeDistributions.jl functionality
 
-This script shows how to use the package to discretise various types of distributions
+This script shows how to use the package to discretize various types of distributions
 and apply different alignment transformations.
 """
 
 using Distributions
-using DiscretiseDistributions
+using discretizeDistributions
 
-println("=== DiscretiseDistributions.jl Examples ===\n")
+println("=== discretizeDistributions.jl Examples ===\n")
 
 # Example 1: Discretising a Normal distribution
 println("1. Discretising a Normal distribution")
 println("   Original: Normal(μ=0, σ=1)")
 
 normal_dist = Normal(0, 1)
-discrete_normal = discretise(normal_dist, 0.5)
+discrete_normal = discretize(normal_dist, 0.5)
 
-println("   Discretised with interval 0.5:")
+println("   discretized with interval 0.5:")
 println("   Support: ", support(discrete_normal))
 println("   Probabilities: ", round.(probs(discrete_normal), digits=4))
 println("   Total probability: ", sum(probs(discrete_normal)))
@@ -28,7 +28,7 @@ println()
 # Example 2: Using custom intervals
 println("2. Using custom intervals")
 custom_intervals = [-3.0, -1.0, -0.5, 0.0, 0.5, 1.0, 3.0]
-discrete_custom = discretise(normal_dist, custom_intervals)
+discrete_custom = discretize(normal_dist, custom_intervals)
 
 println("   Custom intervals: ", custom_intervals)
 println("   Support: ", support(discrete_custom))
@@ -40,9 +40,9 @@ println("3. Discretising an Exponential distribution")
 println("   Original: Exponential(λ=2.0)")
 
 exp_dist = Exponential(2.0)
-discrete_exp = discretise(exp_dist, 0.2; max_quantile=0.95)
+discrete_exp = discretize(exp_dist, 0.2; max_quantile=0.95)
 
-println("   Discretised with interval 0.2 (95% quantile bound):")
+println("   discretized with interval 0.2 (95% quantile bound):")
 println("   Support: ", support(discrete_exp)[1:min(10, end)], length(support(discrete_exp)) > 10 ? "..." : "")
 println("   First 5 probabilities: ", round.(probs(discrete_exp)[1:min(5, end)], digits=4))
 println()
@@ -52,7 +52,7 @@ println("4. Discretising a Poisson distribution")
 println("   Original: Poisson(λ=3.0)")
 
 poisson_dist = Poisson(3.0)
-discrete_poisson = discretise(poisson_dist, 2)  # Group into intervals of width 2
+discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 2
 
 println("   Grouped into intervals of width 2:")
 println("   Support: ", support(discrete_poisson))
@@ -92,9 +92,9 @@ println("6. Working with bounded distributions")
 println("   Original: Uniform(0, 10)")
 
 uniform_dist = Uniform(0, 10)
-discrete_uniform = discretise(uniform_dist, 1.0)
+discrete_uniform = discretize(uniform_dist, 1.0)
 
-println("   Discretised with interval 1.0:")
+println("   discretized with interval 1.0:")
 println("   Support: ", support(discrete_uniform))
 println("   Probabilities: ", round.(probs(discrete_uniform), digits=4))
 println("   Note: All probabilities are equal for uniform distribution")
