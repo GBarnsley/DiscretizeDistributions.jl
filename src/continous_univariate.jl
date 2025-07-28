@@ -19,6 +19,10 @@ function define_bounds(dist::Distributions.ContinuousUnivariateDistribution, int
     return min_interval:max_interval
 end
 
+function pseudo_cdf(dist::Distributions.ContinuousUnivariateDistribution, x::Real)
+    return Distributions.cdf(dist, x - 1)
+end
+
 @doc """
     discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::Real; 
                min_quantile=0.001, max_quantile=0.999)
@@ -66,16 +70,17 @@ function discretise(dist::Distributions.ContinuousUnivariateDistribution, interv
 end
 
 @doc """
-    discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
+    discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
 
-Discretise a continuous univariate distribution using custom interval boundaries.
+Discretise a univariate distribution using custom interval boundaries.
 
 This function converts a continuous distribution into a discrete one using user-specified
 interval boundaries. The probability mass in each interval is computed using the cumulative
-distribution function (CDF).
+distribution function (CDF) or pseudo CDF (which assume a discrete distribution only supports integers
+and is uniform between support points).
 
 # Arguments
-- `dist::Distributions.ContinuousUnivariateDistribution`: The continuous distribution to discretise
+- `dist::Distributions.UnivariateDistribution`: The distribution to discretise
 - `interval::AbstractVector`: Vector of interval boundaries (will be sorted automatically)
 
 # Returns
@@ -98,18 +103,22 @@ discrete_normal = discretise(normal_dist, custom_intervals)
 # The intervals will be sorted automatically if needed
 unsorted_intervals = [8.0, 0.0, 4.0, 2.0, 10.0]
 discrete_normal2 = discretise(normal_dist, unsorted_intervals)
+
+# Discrete distribution
+poisson_dist = Poisson(3.0)
+discrete_poisson = discretise(poisson_dist, [0.5, 2, 4, 6, 8, 10])
 ```
 """
-function discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::AbstractVector)
+function discretise(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
 
     xs = sort(interval)
 
-    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs))
+    probability = diff(pseudo_cdf.(dist, xs))
 
     xs = xs[1:(end-1)]
 
     #set to sum to one
     probability /= sum(probability)
 
-    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
+    return Distributions.DiscreteNonParametric(xs, probability)
 end
