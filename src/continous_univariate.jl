@@ -1,33 +1,75 @@
-function define_bounds(dist::Distributions.ContinuousUnivariateDistribution, interval, min_quantile, max_quantile)
-    max_dist_time = maximum(dist)
-    addition = 0
-    if isinf(max_dist_time)
-        max_dist_time = Distributions.quantile(dist, max_quantile)
-        #since its infinite it doesn't hurt to add an extra interval so we actually capture the quantile
-        addition += 1
-    end
-    max_interval = Int((max_dist_time ÷ interval)) + addition
+function define_intervals(dist::Distributions.ContinuousUnivariateDistribution, interval, min_quantile, max_quantile)
+    #to avoid issues with precision we'll translate everything into multiples of the interval
 
-    min_dist_time = minimum(dist)
-    subtraction = 0
-    if isinf(min_dist_time)
-        min_dist_time = Distributions.quantile(dist, min_quantile)
-        subtraction += 1
+    min_value = minimum(dist)
+    if isinf(min_value)
+        #set next value to the interval of given size that contains the minimum quantile
+        finite_minimum = Int((Distributions.quantile(dist, min_quantile) ÷ interval)) - 1
+    else
+        finite_minimum = Int(min_value ÷ interval)
     end
-    min_interval = Int((min_dist_time ÷ interval)) - subtraction
+    
+    max_value = maximum(dist)
+    if isinf(max_value)
+        #set finite max to the interval of given size that contains the maximum quantile
+        finite_maximum = Int((Distributions.quantile(dist, max_quantile) ÷ interval)) + 1
+    else
+        finite_maximum = Int(max_value ÷ interval)
+    end
 
-    return min_interval:max_interval
+    lower_bound = interval .* collect(finite_minimum:finite_maximum) #ensure we have a zero in the lower bound
+
+    #final additions to capture the tails
+    if min_value != lower_bound[1]
+        lower_bound = vcat([min_value], lower_bound)
+    end
+
+    if max_value != lower_bound[end]
+        upper_bound = vcat(lower_bound[2:end], [max_value])
+    else
+        upper_bound = lower_bound[2:end]
+        lower_bound = lower_bound[1:(end-1)]
+    end
+
+    return IntervalArithmetic.interval(lower_bound, upper_bound)
+end
+
+#a bit of piracy
+function allunique(A::Vector{IntervalArithmetic.Interval{X}}) where X <: Real
+    if length(A) < 32
+        _indexed_allunique(A)
+    elseif Base.OrderStyle(eltype(A)) === Base.Ordered()
+        a1, rest1 = Iterators.peel(A)::Tuple{Any,Any}
+        a2, rest = Iterators.peel(rest1)::Tuple{Any,Any}
+        if !IntervalArithmetic.isequal_interval(a1, a2)
+            compare = IntervalArithmetic.strictprecedes(a1, a2) ?  IntervalArithmetic.strictprecedes : (a,b) ->  IntervalArithmetic.strictprecedes(b,a)
+            for a in rest
+                if compare(a2, a)
+                    a2 = a
+                elseif IntervalArithmetic.isequal_interval(a2, a)
+                    return false
+                else
+                    return Base._hashed_allunique(A)
+                end
+            end
+        else # isequal(a1, a2)
+            return false
+        end
+        return true
+    else
+        Base._hashed_allunique(A)
+    end
 end
 
 function discretise_univariate_continuous(dist, xs)
-    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs))
-
-    xs = xs[1:(end-1)]
+    xs_values = vcat(IntervalArithmetic.inf.(xs), [IntervalArithmetic.sup(xs[end])])
+    
+    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs_values))
 
     #set to sum to one
     probability /= sum(probability)
-
-    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
+    allunique(xs)
+    return Distributions.DiscreteNonParametric(xs, probability)
 end
 
 @doc """
@@ -69,9 +111,7 @@ discrete_exp = discretise(exp_dist, 0.1; min_quantile=0.01, max_quantile=0.95)
 """
 function discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::Real; min_quantile = 0.001, max_quantile=0.999)
 
-    range = define_bounds(dist, interval, min_quantile, max_quantile)
-
-    xs = collect(range * interval)
+    xs = define_intervals(dist, interval, min_quantile, max_quantile)
 
     return discretise_univariate_continuous(dist, xs)
 end

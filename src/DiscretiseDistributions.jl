@@ -62,10 +62,13 @@ module DiscretiseDistributions
     export discretise
     export center_distribution, right_align_distribution
     
-    import Distributions
+    import Distributions, IntervalArithmetic
+    import Base: allunique
     
     include("utility.jl")
     include("continous_univariate.jl")
     include("discrete_univariate.jl")
     
+    dist = Distributions.Normal(0, 1)
+    interval = 0.1
 end
