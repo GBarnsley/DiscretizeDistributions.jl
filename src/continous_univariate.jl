@@ -19,17 +19,6 @@ function define_bounds(dist::Distributions.ContinuousUnivariateDistribution, int
     return min_interval:max_interval
 end
 
-function discretise_univariate_continuous(dist, xs)
-    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs))
-
-    xs = xs[1:(end-1)]
-
-    #set to sum to one
-    probability /= sum(probability)
-
-    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
-end
-
 @doc """
     discretise(dist::Distributions.ContinuousUnivariateDistribution, interval::Real; 
                min_quantile=0.001, max_quantile=0.999)
@@ -73,7 +62,7 @@ function discretise(dist::Distributions.ContinuousUnivariateDistribution, interv
 
     xs = collect(range * interval)
 
-    return discretise_univariate_continuous(dist, xs)
+    return discretise(dist, xs)
 end
 
 @doc """
@@ -115,5 +104,12 @@ function discretise(dist::Distributions.ContinuousUnivariateDistribution, interv
 
     xs = sort(interval)
 
-    return discretise_univariate_continuous(dist, xs)
+    probability = diff(map(Base.Fix1(Distributions.cdf, dist), xs))
+
+    xs = xs[1:(end-1)]
+
+    #set to sum to one
+    probability /= sum(probability)
+
+    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
 end

@@ -14,17 +14,7 @@ function define_bounds(dist::Distributions.DiscreteUnivariateDistribution, inter
     return min_interval:max_interval
 end
 
-function discretise_univariate_discrete(dist, xs)
-    xs_daily = floor.(xs)
-    probability = map(Base.Fix1(Distributions.pdf, dist), xs_daily)
-
-    #set to sum to one
-    probability /= sum(probability)
-
-    return Distributions.DiscreteNonParametric(xs[probability .> 0], probability[probability .> 0])
-end
-
-@doc """
+"""
     discretise(dist::Distributions.DiscreteUnivariateDistribution, interval::Real; 
                min_quantile=0.001, max_quantile=0.999)
 
@@ -33,6 +23,9 @@ Discretise a discrete univariate distribution into intervals of fixed width.
 This function groups the support of a discrete distribution into intervals of specified width,
 aggregating probability masses within each interval. This is useful for reducing the granularity
 of discrete distributions or for creating interval-based representations.
+
+This is only sensible with discrete distributions that have finite support that makes sense as a continuous
+distribution, such as Poisson or Binomial distributions. 
 
 # Arguments
 - `dist::Distributions.DiscreteUnivariateDistribution`: The discrete distribution to discretise
@@ -67,16 +60,20 @@ function discretise(dist::Distributions.DiscreteUnivariateDistribution, interval
     
     xs = collect(range * interval)
 
-    return discretise_univariate_discrete(dist, xs)
+    return discretise(dist, xs)
 end
 
-@doc """
+"""
     discretise(dist::Distributions.DiscreteUnivariateDistribution, interval::AbstractVector)
 
 Discretise a discrete univariate distribution using custom interval boundaries.
 
 This function groups the support of a discrete distribution according to user-specified
 interval boundaries, aggregating probability masses within each interval.
+
+This is only sensible with discrete distributions that have finite support that makes sense as a continuous
+distribution, such as Poisson or Binomial distributions. 
+
 
 # Arguments
 - `dist::Distributions.DiscreteUnivariateDistribution`: The discrete distribution to discretise
@@ -87,8 +84,8 @@ interval boundaries, aggregating probability masses within each interval.
 
 # Details
 The input interval vector is automatically sorted. Probability masses are computed using the
-probability density function (PDF) at floored interval boundaries. The resulting distribution
-has support points at the interval boundaries with aggregated probabilities normalized to sum to 1.
+probability density function (PDF) at floored interval boundaries. The distribution is assumed to be
+uniform within the intervals of its original support.
 
 # Examples
 ```julia
@@ -108,5 +105,36 @@ function discretise(dist::Distributions.DiscreteUnivariateDistribution, interval
 
     xs = sort(interval)
 
-    return discretise_univariate_discrete(dist, xs)
+    xs_floored = Int.(floor.(xs))
+
+    #calculate full support and probability for the distribution over the range of xs
+    full_support = collect(minimum(xs_floored):maximum(xs_floored))
+    full_probability = map(Base.Fix1(Distributions.pdf, dist), full_support)
+    full_probability /= sum(full_probability[1:(end-1)])
+
+    n_intervals = length(xs) - 1
+
+    probability = zeros(eltype(full_probability), n_intervals)
+
+    for i in 1:n_intervals
+        min_bound = xs[i]
+        max_bound = xs[i + 1]
+        #and in terms of the actual support of the distribution
+        min_support = xs_floored[i]
+        max_support = xs_floored[i + 1]
+
+        #assume within that bound the distribution is uniform
+        if min_support == max_support
+            probability[i] = full_probability[min_support] * (max_bound - min_bound)
+        else
+            probability[i] =
+                full_probability[min_support] * (min_support + 1 - min_bound) +
+                full_probability[max_support] * (max_bound - max_support)
+            if max_support > min_support + 1
+                probability[i] += sum(full_probability[(min_support + 1):(max_support - 1)])
+            end
+        end
+    end
+
+    return Distributions.DiscreteNonParametric(xs[1:(end - 1)], probability)
 end
