@@ -112,7 +112,7 @@
     end
 
     @testset "right_align_distribution function tests" begin
-        # Create interval-based distribution using discretize function  
+        # Create interval-based distribution using discretize function
         normal_dist = Normal(0, 1)
         interval_dist = discretize(
             normal_dist, 0.5; min_quantile = 0.01, max_quantile = 0.99)
