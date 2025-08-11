@@ -20,7 +20,7 @@ The package follows a two-stage approach:
 ### Main Functions
 - [`discretize`](@ref): Convert distributions into interval-based discrete representations
 - [`left_align_distribution`](@ref): Convert intervals to left-aligned point values
-- [`centred_distribution`](@ref): Convert intervals to centered point values  
+- [`centred_distribution`](@ref): Convert intervals to centered point values
 - [`right_align_distribution`](@ref): Convert intervals to right-aligned point values
 
 ## Examples
@@ -35,7 +35,7 @@ discrete_intervals = discretize(normal_dist, 0.5)  # Support: intervals like [-1
 
 # Convert to different alignments
 left_aligned = left_align_distribution(discrete_intervals)    # Support: [-1.0, -0.5, 0.0, ...]
-centered = centred_distribution(discrete_intervals)          # Support: [-0.75, -0.25, 0.25, ...]  
+centered = centred_distribution(discrete_intervals)          # Support: [-0.75, -0.25, 0.25, ...]
 right_aligned = right_align_distribution(discrete_intervals) # Support: [-0.5, 0.0, 0.5, ...]
 
 # Use custom intervals
@@ -48,12 +48,12 @@ discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 
 ```
 """
 module DiscretizeDistributions
-    export discretize
-    export left_align_distribution, centred_distribution, right_align_distribution
-    
-    import Distributions, IntervalArithmetic
-    
-    include("utility.jl")
-    include("univariate.jl")
-    
+export discretize
+export left_align_distribution, centred_distribution, right_align_distribution
+
+import Distributions, IntervalArithmetic
+
+include("utility.jl")
+include("univariate.jl")
+
 end

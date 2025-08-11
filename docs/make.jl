@@ -1,7 +1,7 @@
 using Documenter, DiscretizeDistributions
 
 makedocs(
-    sitename="Discretize Distributions.jl Distributions",
+    sitename = "Discretize Distributions.jl Distributions",
     pages = [
         "index.md"
     ]

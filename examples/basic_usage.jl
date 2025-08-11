@@ -21,7 +21,7 @@ discrete_normal = discretize(normal_dist, 0.5)
 
 println("   Discretized with interval 0.5:")
 println("   Support: ", support(discrete_normal))
-println("   Probabilities: ", round.(probs(discrete_normal), digits=4))
+println("   Probabilities: ", round.(probs(discrete_normal), digits = 4))
 println("   Total probability: ", sum(probs(discrete_normal)))
 println()
 
@@ -32,7 +32,7 @@ discrete_custom = discretize(normal_dist, custom_intervals)
 
 println("   Custom intervals: ", custom_intervals)
 println("   Support: ", support(discrete_custom))
-println("   Probabilities: ", round.(probs(discrete_custom), digits=4))
+println("   Probabilities: ", round.(probs(discrete_custom), digits = 4))
 println()
 
 # Example 3: Discretising an Exponential distribution
@@ -40,11 +40,13 @@ println("3. Discretising an Exponential distribution")
 println("   Original: Exponential(λ=2.0)")
 
 exp_dist = Exponential(2.0)
-discrete_exp = discretize(exp_dist, 0.2; max_quantile=0.95)
+discrete_exp = discretize(exp_dist, 0.2; max_quantile = 0.95)
 
 println("   Discretized with interval 0.2 (95% quantile bound):")
-println("   Support: ", support(discrete_exp)[1:min(10, end)], length(support(discrete_exp)) > 10 ? "..." : "")
-println("   First 5 probabilities: ", round.(probs(discrete_exp)[1:min(5, end)], digits=4))
+println("   Support: ", support(discrete_exp)[1:min(10, end)],
+    length(support(discrete_exp)) > 10 ? "..." : "")
+println(
+    "   First 5 probabilities: ", round.(probs(discrete_exp)[1:min(5, end)], digits = 4))
 println()
 
 # Example 4: Discretising a discrete distribution (Poisson)
@@ -56,7 +58,7 @@ discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 
 
 println("   Grouped into intervals of width 2:")
 println("   Support: ", support(discrete_poisson))
-println("   Probabilities: ", round.(probs(discrete_poisson), digits=4))
+println("   Probabilities: ", round.(probs(discrete_poisson), digits = 4))
 println()
 
 # Example 5: Distribution alignment transformations
@@ -96,7 +98,7 @@ discrete_uniform = discretize(uniform_dist, 1.0)
 
 println("   Discretized with interval 1.0:")
 println("   Support: ", support(discrete_uniform))
-println("   Probabilities: ", round.(probs(discrete_uniform), digits=4))
+println("   Probabilities: ", round.(probs(discrete_uniform), digits = 4))
 println("   Note: All probabilities are equal for uniform distribution")
 println()
 
