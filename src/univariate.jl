@@ -1,4 +1,5 @@
-function define_intervals(dist::Distributions.UnivariateDistribution, interval, min_quantile, max_quantile)
+function define_intervals(
+        dist::Distributions.UnivariateDistribution, interval, min_quantile, max_quantile)
     #to avoid issues with precision we'll translate everything into multiples of the interval
 
     min_value = minimum(dist)
@@ -8,7 +9,7 @@ function define_intervals(dist::Distributions.UnivariateDistribution, interval, 
     else
         finite_minimum = Int(min_value ÷ interval)
     end
-    
+
     max_value = maximum(dist)
     if isinf(max_value)
         #set finite max to the interval of given size that contains the maximum quantile
@@ -28,7 +29,7 @@ function define_intervals(dist::Distributions.UnivariateDistribution, interval, 
         upper_bound = vcat(lower_bound[2:end], [max_value])
     else
         upper_bound = lower_bound[2:end]
-        lower_bound = lower_bound[1:(end-1)]
+        lower_bound = lower_bound[1:(end - 1)]
     end
 
     return IntervalArithmetic.interval.(lower_bound, upper_bound)
@@ -45,9 +46,10 @@ function pseudo_cdf(dist::Distributions.DiscreteUnivariateDistribution, x::Real)
     elseif isinf(x) && x < 0
         return 0.0
     end
-    
+
     floor_x = floor(x)
-    return Distributions.cdf(dist, floor_x - 1) + Distributions.pdf(dist, floor_x) * (x - floor_x)
+    return Distributions.cdf(dist, floor_x - 1) +
+           Distributions.pdf(dist, floor_x) * (x - floor_x)
 end
 
 @doc """
@@ -92,8 +94,8 @@ poisson_dist = Poisson(3.0)
 discrete_poisson = discretize(poisson_dist, 2)
 ```
 """
-function discretize(dist::Distributions.UnivariateDistribution, interval::Real; min_quantile = 0.001, max_quantile=0.999)
-
+function discretize(dist::Distributions.UnivariateDistribution, interval::Real;
+        min_quantile = 0.001, max_quantile = 0.999)
     xs = define_intervals(dist, interval, min_quantile, max_quantile)
 
     return discretize(dist, xs)
@@ -142,7 +144,6 @@ discrete_poisson = discretize(poisson_dist, [0.5, 2, 4, 6, 8, 10])
 ```
 """
 function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector)
-    
     xs = sort(interval)
 
     min_value = minimum(dist)
@@ -155,7 +156,7 @@ function discretize(dist::Distributions.UnivariateDistribution, interval::Abstra
 
     xs = vcat([min_value], xs, [max_value])
 
-    xs = IntervalArithmetic.interval.(xs[1:(end-1)], xs[2:end])
+    xs = IntervalArithmetic.interval.(xs[1:(end - 1)], xs[2:end])
 
     return discretize(dist, xs)
 end
@@ -195,14 +196,15 @@ discrete_intervals = discretize(normal_dist, intervals)
 # Each interval gets probability mass according to the normal distribution
 ```
 """
-function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector{IntervalArithmetic.Interval{X}}) where X <: Real
-    
-    xs_values = vcat(IntervalArithmetic.inf.(interval), [IntervalArithmetic.sup(interval[end])])
+function discretize(dist::Distributions.UnivariateDistribution,
+        interval::AbstractVector{IntervalArithmetic.Interval{X}}) where {X <: Real}
+    xs_values = vcat(
+        IntervalArithmetic.inf.(interval), [IntervalArithmetic.sup(interval[end])])
 
     probability = diff(pseudo_cdf.(dist, xs_values))
 
     #set to sum to one
     probability /= sum(probability)
 
-    return Distributions.DiscreteNonParametric(interval, probability; check_args=false)
+    return Distributions.DiscreteNonParametric(interval, probability; check_args = false)
 end

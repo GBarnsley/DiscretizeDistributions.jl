@@ -4,7 +4,6 @@ using Distributions, IntervalArithmetic
 using Aqua, JET
 
 @testset "DiscretizeDistributions.jl" begin
-
     @testset "Aqua" begin
         Aqua.test_all(DiscretizeDistributions)
     end

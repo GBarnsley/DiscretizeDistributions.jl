@@ -1,8 +1,10 @@
 function remove_infinities(
         dist::Distributions.DiscreteNonParametric{
-            IntervalArithmetic.Interval{T}, P, S, V
-        }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
-
+        IntervalArithmetic.Interval{T}, P,
+        S,
+        V
+}) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}},
+        V <: AbstractVector{P}}
     support = dist.support
     p = dist.p
     if isinf(IntervalArithmetic.inf(support[1]))
@@ -18,7 +20,7 @@ function remove_infinities(
         p = p[1:(end - 1)]
     end
     p = p ./ sum(p)  # Normalize probabilities
-    return Distributions.DiscreteNonParametric(support, p; check_args=false)
+    return Distributions.DiscreteNonParametric(support, p; check_args = false)
 end
 
 @doc """
@@ -51,13 +53,16 @@ centered = centred_distribution(interval_dist)
 ```
 """
 function centred_distribution(
-    dist::Distributions.DiscreteNonParametric{
-        IntervalArithmetic.Interval{T}, P, S, V
-    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
-    
+        dist::Distributions.DiscreteNonParametric{
+        IntervalArithmetic.Interval{T}, P,
+        S,
+        V
+}) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}},
+        V <: AbstractVector{P}}
     dist = remove_infinities(dist)
 
-    xs = (IntervalArithmetic.sup.(dist.support) .+ IntervalArithmetic.inf.(dist.support)) ./ 2
+    xs = (IntervalArithmetic.sup.(dist.support) .+ IntervalArithmetic.inf.(dist.support)) ./
+         2
 
     return Distributions.DiscreteNonParametric(xs, dist.p)
 end
@@ -92,10 +97,12 @@ left_aligned = left_align_distribution(interval_dist)
 ```
 """
 function left_align_distribution(
-    dist::Distributions.DiscreteNonParametric{
-        IntervalArithmetic.Interval{T}, P, S, V
-    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
-    
+        dist::Distributions.DiscreteNonParametric{
+        IntervalArithmetic.Interval{T}, P,
+        S,
+        V
+}) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}},
+        V <: AbstractVector{P}}
     dist = remove_infinities(dist)
 
     xs = IntervalArithmetic.inf.(dist.support)
@@ -133,9 +140,11 @@ right_aligned = right_align_distribution(interval_dist)
 ```
 """
 function right_align_distribution(dist::Distributions.DiscreteNonParametric{
-        IntervalArithmetic.Interval{T}, P, S, V
-    }) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}}, V <: AbstractVector{P}}
-    
+        IntervalArithmetic.Interval{T}, P,
+        S,
+        V
+}) where {T <: Real, P <: Real, S <: AbstractVector{IntervalArithmetic.Interval{T}},
+        V <: AbstractVector{P}}
     dist = remove_infinities(dist)
 
     xs = IntervalArithmetic.sup.(dist.support)
