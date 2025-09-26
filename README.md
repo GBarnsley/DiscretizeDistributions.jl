@@ -44,10 +44,15 @@ using DiscretizeDistributions
 normal_dist = Normal(0.0, 1.0)
 discrete_intervals = discretize(normal_dist, 1//10)  # Returns intervals like [0.0, 0.1), [0.1, 0.2), etc.
 
-# Convert to different point-based alignments
+# Convert to different point-based alignments using post-processing
 left_aligned = left_align_distribution(discrete_intervals)    # Uses interval start points
 centered = centred_distribution(discrete_intervals)          # Uses interval midpoints  
 right_aligned = right_align_distribution(discrete_intervals) # Uses interval end points
+
+# Or use direct method specification for one-step processing
+left_direct = discretize(normal_dist, 1//10; method=:left_aligned)
+centered_direct = discretize(normal_dist, 1//10; method=:centred)
+right_direct = discretize(normal_dist, 1//10; method=:right_aligned)
 
 # Use custom intervals
 custom_intervals = [-3.0, -1.0, 0.0, 1.0, 3.0]
@@ -68,6 +73,21 @@ discrete_poisson = discretize(poisson_dist, 2)  # Group into intervals of width 
 # The backend maintains interval structure - convert to points as needed
 println("Interval support: ", support(discrete_intervals)[1:5])  # Shows first 5 intervals
 println("Left-aligned: ", support(left_aligned)[1:5])           # Shows first 5 points
+```
+
+## Unbiased Discretization Method
+
+The unbiased method provides mean-preserving discretization by computing probabilities that ensure the discrete distribution's mean matches the original distribution as closely as possible:
+
+```julia
+# Note: Unbiased method requires equal interval widths
+normal_dist = Gamma(2, 10)
+unbiased_discrete = discretize(normal_dist, 0.6; method=:unbiased)
+
+# Compare means
+println("Original mean: ", mean(normal_dist))
+println("Unbiased discrete mean: ", mean(unbiased_discrete))
+println("Centered discrete mean: ", mean(discretize(normal_dist, 0.6; method=:centred)))
 ```
 
 ## Related Packages

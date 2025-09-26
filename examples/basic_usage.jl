@@ -65,13 +65,13 @@ println()
 println("5. Distribution alignment transformations")
 
 # Create a simple discrete distribution
-test_dist = DiscreteNonParametric([1.0, 2.0, 3.0, 4.0], [0.2, 0.3, 0.3, 0.2])
+test_dist =  discretize(Normal(0, 10), 1)
 println("   Original distribution:")
 println("   Support: ", support(test_dist))
 println("   Probabilities: ", probs(test_dist))
 
 # Center the distribution
-centered = center_distribution(test_dist)
+centered = centred_distribution(test_dist)
 println("   Centered distribution:")
 println("   Support: ", support(centered))
 println("   Probabilities: ", probs(centered))
@@ -81,13 +81,6 @@ right_aligned = right_align_distribution(test_dist)
 println("   Right-aligned distribution:")
 println("   Support: ", support(right_aligned))
 println("   Probabilities: ", probs(right_aligned))
-
-# Shift by custom amount
-shifted = right_align_distribution(test_dist, 0.5)
-println("   Shifted by 0.5:")
-println("   Support: ", support(shifted))
-println("   Probabilities: ", probs(shifted))
-println()
 
 # Example 6: Working with bounded distributions
 println("6. Working with bounded distributions")
@@ -100,6 +93,23 @@ println("   Discretized with interval 1.0:")
 println("   Support: ", support(discrete_uniform))
 println("   Probabilities: ", round.(probs(discrete_uniform), digits = 4))
 println("   Note: All probabilities are equal for uniform distribution")
+println()
+
+# Example 7: Unbiased method demonstration
+println("7. Unbiased method demonstration")
+println("   Original: Normal(μ=2.0, σ=1.0)")
+
+normal_dist2 = Normal(2.0, 1.0)
+println("   Original mean: ", mean(normal_dist2))
+
+# Compare different methods
+interval_result = centred_distribution(discretize(normal_dist2, 0.5, method=:interval))
+unbiased_result = discretize(normal_dist2, 0.5, method=:unbiased)
+
+println("   Discretized with interval width 0.5:")
+println("   - Interval method mean: ", mean(interval_result))
+println("   - Unbiased method mean: ", mean(unbiased_result))
+println("   Note: both methods are similar, but unbiased supports all values in [min, min + interval, ..., max]")
 println()
 
 println("=== Examples completed ===")
