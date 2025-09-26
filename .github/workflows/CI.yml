@@ -37,15 +37,6 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
-      - name: Install JET.jl version compatible with Julia
-        run: |
-          julia -e '
-            if VERSION < v"1.12.0"
-              using Pkg; Pkg.add(Pkg.PackageSpec(name="JET", version="0.9"))
-            else
-              using Pkg; Pkg.add(Pkg.PackageSpec(name="JET", version="0.10"))
-            end
-          '
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
