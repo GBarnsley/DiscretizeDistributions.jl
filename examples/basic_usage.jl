@@ -65,7 +65,7 @@ println()
 println("5. Distribution alignment transformations")
 
 # Create a simple discrete distribution
-test_dist =  discretize(Normal(0, 10), 1)
+test_dist = discretize(Normal(0, 10), 1)
 println("   Original distribution:")
 println("   Support: ", support(test_dist))
 println("   Probabilities: ", probs(test_dist))
@@ -103,8 +103,8 @@ normal_dist2 = Normal(2.0, 1.0)
 println("   Original mean: ", mean(normal_dist2))
 
 # Compare different methods
-interval_result = centred_distribution(discretize(normal_dist2, 0.5, method=:interval))
-unbiased_result = discretize(normal_dist2, 0.5, method=:unbiased)
+interval_result = centred_distribution(discretize(normal_dist2, 0.5, method = :interval))
+unbiased_result = discretize(normal_dist2, 0.5, method = :unbiased)
 
 println("   Discretized with interval width 0.5:")
 println("   - Interval method mean: ", mean(interval_result))

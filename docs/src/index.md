@@ -9,7 +9,7 @@ The package provides functions to discretize univariate distributions into `Disc
 - **Finite support**: Infinite distributions are truncated using quantile bounds (default 0.1% and 99.9%)
 - **Discrete distribution quirks**: Discretizing already-discrete distributions has some limitations and edge cases
 - **Non-integer discrete values**: Discrete distributions with non-integer support may behave unexpectedly
-- **Numeric means**: Not all distributions have exact numeric means (i.e. truncated Gamma or Cauchy), these are needed for the `:unbiased` method so a backup numeric mean is calculated where possible using the trapezoid rule with `trapezoid_points`.
+- **Numeric means**: Not all distributions have exact numeric means (i.e. truncated Gamma), these are needed for the `:unbiased` method so a backup numeric mean is calculated where possible using the trapezoid rule with `trapezoid_points`.
 
 ## Future Work
 

@@ -58,7 +58,8 @@ function safe_mean(dist::Distributions.UnivariateDistribution, trapezoid_points)
         dx = (max_val - min_val) / (trapezoid_points - 1)
 
         # Trapezoidal rule
-        return dx * (0.5 * (integrand_vals[1] + integrand_vals[end]) + sum(integrand_vals[2:end-1]))
+        return dx * (0.5 * (integrand_vals[1] + integrand_vals[end]) +
+                sum(integrand_vals[2:(end - 1)]))
     end
 end
 
@@ -77,19 +78,10 @@ function limited_expectation(dist::Distributions.UnivariateDistribution, limit::
         # Calculate P(X > u)
         survival_prob = Distributions.ccdf(dist, limit)
 
-        # Calculate E[X·1_{X≤u}] using truncated distribution
-        if survival_prob ≈ 1.0
-            # Essentially all mass is above the limit
-            return limit
-        elseif survival_prob ≈ 0.0
-            # Essentially all mass is below the limit
-            return safe_mean(dist, trapezoid_points)
-        else
-            truncated_dist = Distributions.truncated(dist; lower=minimum(dist), upper=limit)
-            truncated_expectation = safe_mean(truncated_dist, trapezoid_points)
-            truncated_prob = 1.0 - survival_prob
-            return truncated_expectation * truncated_prob + limit * survival_prob
-        end
+        truncated_dist = Distributions.truncated(dist; lower = minimum(dist), upper = limit)
+        truncated_expectation = safe_mean(truncated_dist, trapezoid_points)
+        truncated_prob = 1.0 - survival_prob
+        return truncated_expectation * truncated_prob + limit * survival_prob
     end
 end
 
@@ -162,8 +154,8 @@ poisson_dist = Poisson(3.0)
 discrete_poisson = discretize(poisson_dist, 2; method=:centred)
 ```
 """
-dist = Distributions.Normal(0.0, 1.0); interval = 1//10
-function discretize(dist::Distributions.UnivariateDistribution, interval::Real; method::Symbol = :interval,
+function discretize(dist::Distributions.UnivariateDistribution,
+        interval::Real; method::Symbol = :interval,
         min_quantile = 0.001, max_quantile = 0.999, trapezoid_points::Int = 10000)
     xs = define_intervals(dist, interval, min_quantile, max_quantile)
 
@@ -221,17 +213,9 @@ poisson_dist = Poisson(3.0)
 discrete_poisson = discretize(poisson_dist, [0.5, 2, 4, 6, 8, 10]; method=:centred)
 ```
 """
-function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector; method::Symbol = :interval, trapezoid_points::Int = 10000)
+function discretize(dist::Distributions.UnivariateDistribution, interval::AbstractVector;
+        method::Symbol = :interval, trapezoid_points::Int = 10000)
     xs = sort(interval)
-    if method == :unbiased
-        # Check if intervals are equally spaced
-        if length(xs) >= 2
-            interval_widths = diff(xs)
-            if length(interval_widths) >= 2 && any([!(i ≈ interval_widths[1]) for i in interval_widths[2:end]])
-                @error "The :unbiased method is not compatible with unequal interval sizes."
-            end
-        end
-    end
 
     min_value = minimum(dist)
 
@@ -294,26 +278,50 @@ discrete_left = discretize(normal_dist, intervals; method=:left_aligned)     # L
 ```
 """
 function discretize(dist::Distributions.UnivariateDistribution,
-        interval::AbstractVector{IntervalArithmetic.Interval{X}}; method::Symbol = :interval, trapezoid_points::Int = 10000) where {X <: Real}
+        interval::AbstractVector{IntervalArithmetic.Interval{X}}; method::Symbol = :interval, trapezoid_points::Int = 10000) where {X <:
+                                                                                                                                    Real}
     xs_values = vcat(
         IntervalArithmetic.inf.(interval), [IntervalArithmetic.sup(interval[end])])
 
     if method == :unbiased
-
         unbiased_values = xs_values[.!isinf.(xs_values)]
 
         interval_widths = diff(unbiased_values)
-        if length(interval_widths) >= 2 && any([!(i ≈ interval_widths[1]) for i in interval_widths[2:end]])
+        if length(interval_widths) >= 2 &&
+           any([!(i ≈ interval_widths[1]) for i in interval_widths[2:end]])
             error("The :unbiased method requires equal interval widths.")
+        end
+
+        #check the mean is actually defined
+        if isa(dist, Distributions.Truncated)
+            if isnan(Distributions.mean(dist.untruncated)) ||
+               isinf(Distributions.mean(dist.untruncated))
+                error("The :unbiased method requires a distribution with a defined mean.")
+            end
+        elseif isnan(Distributions.mean(dist)) || isinf(Distributions.mean(dist))
+            error("The :unbiased method requires a distribution with a defined mean.")
         end
 
         probability = Vector{eltype(dist)}(undef, length(unbiased_values))
 
-        probability[1] = (limited_expectation(dist, unbiased_values[1], trapezoid_points) - limited_expectation(dist, unbiased_values[2], trapezoid_points))/(unbiased_values[2] - unbiased_values[1]) + Distributions.ccdf(dist, unbiased_values[1])
-        probability[end] = (limited_expectation(dist, unbiased_values[end], trapezoid_points) - limited_expectation(dist, unbiased_values[end - 1], trapezoid_points))/(unbiased_values[end] - unbiased_values[end - 1]) - Distributions.ccdf(dist, unbiased_values[end])
+        probability[1] = (limited_expectation(dist, unbiased_values[1], trapezoid_points) -
+                          limited_expectation(dist, unbiased_values[2],
+            trapezoid_points))/(unbiased_values[2] - unbiased_values[1]) +
+                         Distributions.ccdf(dist, unbiased_values[1])
+        probability[end] = (limited_expectation(dist, unbiased_values[end], trapezoid_points) -
+                            limited_expectation(dist, unbiased_values[end - 1],
+            trapezoid_points))/(unbiased_values[end] - unbiased_values[end - 1]) -
+                           Distributions.ccdf(dist, unbiased_values[end])
 
-        probability[2:(end - 1)] .= ((2 .* limited_expectation.(dist, unbiased_values[2:(end - 1)], trapezoid_points)) .- limited_expectation.(dist, unbiased_values[1:(end - 2)], trapezoid_points) .- limited_expectation.(dist, unbiased_values[3:end], trapezoid_points))./
-            (unbiased_values[3:end] .- unbiased_values[2:(end - 1)])
+        probability[2:(end - 1)] .= ((2 .* limited_expectation.(
+            dist, unbiased_values[2:(end - 1)], trapezoid_points)) .-
+                                     limited_expectation.(
+            dist, unbiased_values[1:(end - 2)], trapezoid_points) .-
+                                     limited_expectation.(dist, unbiased_values[3:end], trapezoid_points)) ./
+                                    (unbiased_values[3:end] .- unbiased_values[2:(end - 1)])
+        if any(probability .< 0)
+            error("Negative probabilities encountered in :unbiased method, if the mean is undefined consider increasing trapezoid_points.")
+        end
     else
         probability = diff(pseudo_cdf.(dist, xs_values))
     end
@@ -322,11 +330,14 @@ function discretize(dist::Distributions.UnivariateDistribution,
     probability /= sum(probability)
 
     if method == :right_aligned
-        return right_align_distribution(Distributions.DiscreteNonParametric(interval, probability; check_args = false))
+        return right_align_distribution(Distributions.DiscreteNonParametric(
+            interval, probability; check_args = false))
     elseif method == :left_aligned
-        return left_align_distribution(Distributions.DiscreteNonParametric(interval, probability; check_args = false))
+        return left_align_distribution(Distributions.DiscreteNonParametric(
+            interval, probability; check_args = false))
     elseif method == :centred
-        return centred_distribution(Distributions.DiscreteNonParametric(interval, probability; check_args = false))
+        return centred_distribution(Distributions.DiscreteNonParametric(
+            interval, probability; check_args = false))
     elseif method == :unbiased
         return Distributions.DiscreteNonParametric(unbiased_values, probability)
     else
