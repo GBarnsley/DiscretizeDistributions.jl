@@ -193,7 +193,7 @@
             # Test with finite intervals only
             finite_indices = findall(
                 i -> isfinite(inf(uniform_intervals[i])) &&
-                    isfinite(sup(uniform_intervals[i])),
+                     isfinite(sup(uniform_intervals[i])),
                 1:length(uniform_intervals))
 
             for i in finite_indices[1:min(3, end)]  # Test first few finite intervals
