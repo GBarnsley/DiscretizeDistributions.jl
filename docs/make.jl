@@ -1,9 +1,10 @@
 using Documenter, DiscretizeDistributions
 
 makedocs(
-    sitename = "Discretize Distributions.jl Distributions",
+    sitename = "Discretize Distributions",
     pages = [
-        "index.md"
+        "index.md",
+        "double_censoring.md"
     ]
 )
 

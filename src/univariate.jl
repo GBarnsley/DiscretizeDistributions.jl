@@ -21,12 +21,12 @@ function define_intervals(
     lower_bound = interval .* collect(finite_minimum:finite_maximum) #ensure we have a zero in the lower bound
 
     #final additions to capture the tails
-    if min_value != lower_bound[1]
+    if !(min_value ≈ lower_bound[1]) && !(isinf(min_value))
         lower_bound = vcat([min_value], lower_bound)
     end
 
-    if max_value != lower_bound[end]
-        upper_bound = vcat(lower_bound[2:end], [max_value])
+    if !(max_value ≈ lower_bound[end]) && !(isinf(max_value))
+        upper_bound = vcat(lower_bound[2:end], [convert(eltype(lower_bound), max_value)])
     else
         upper_bound = lower_bound[2:end]
         lower_bound = lower_bound[1:(end - 1)]
