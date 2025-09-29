@@ -2,7 +2,19 @@
 
 A Julia package for converting continuous and discrete probability distributions into discrete representations with interval-based support using `IntervalArithmetic.jl`.
 
-The package provides functions to discretize univariate distributions into `DiscreteNonParametric` distributions where the support consists of `IntervalArithmetic.Interval` objects. Each interval `[a, b]` represents a probability mass over that range, computed using the cumulative distribution function (CDF) for continuous distributions or aggregated probability mass function (PMF) for discrete distributions.
+The package provides functions to discretize univariate distributions into `DiscreteNonParametric` distributions where the support consists of `IntervalArithmetic.Interval` objects. Each interval `[a, b)` represents a probability mass over that range, computed using the cumulative distribution function (CDF) for continuous distributions or aggregated probability mass function (PMF) for discrete distributions.
+
+## Alternative Packages
+
+In julia, there are more lightweight discretizations. This package creates a new distribution that matches the discrete approximation (and so should be faster to simulate from) however this approach has more overhead than wrapping the existing pdf so these alternatives are recommended for fitting censored or discretized distributions (i.e. with `Turing` or some other package):
+
+- `pdf`/`logpdf`/`cdf`/`logcdf` methods from (StatsDiscretizations.jl)[https://github.com/nignatiadis/StatsDiscretizations.jl/tree/master]
+- (CensoredDistributions.jl)[https://github.com/EpiAware/CensoredDistributions.jl] which also has the ability for account for double censoring and truncation
+
+In R:
+
+- `distcrete` in the (discrete)[https://github.com/reconhub/distcrete] package
+- `discretize` in the (actuar)[https://gitlab.com/vigou3/actuar] package
 
 ## Limitations
 
@@ -60,7 +72,8 @@ println("Original mean: ", mean(normal_dist))      # 2.0
 println("Unbiased mean: ", mean(unbiased_discrete)) # ≈ 2.0
 println("Centered mean: ", mean(discretize(normal_dist, 0.2; method=:centred)))
 ```
-Both preserve the mean but the unbiased gives more control, supporting all values between [min, min + interval, ..., max] or [lower_quantile, lower_quantile + interval, ..., upper_quantile], where as centred by necessity supports [min + interval/2, min + 3*interval/2, ..., max - interval/2].
+Both preserve the mean but the unbiased gives more control, supporting all values between [min, min + interval, ..., max] or [lower_quantile, lower_quantile + interval, ..., upper_quantile], where as centred (which maintains the mean) by necessity supports [min + interval/2, min + 3*interval/2, ..., max - interval/2].
+However this requires that the mean of the given distribution be defined, and where an analytical approach is not defined (but the mean of the distribution isn't undefined in general) in `Distributions` an empirical mean is calculated.
 
 ### Working with Results
 

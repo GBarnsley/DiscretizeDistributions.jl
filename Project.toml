@@ -1,7 +1,7 @@
 name = "DiscretizeDistributions"
 uuid = "1dbf0e27-43cd-4e03-8ecf-3f7be9d12b15"
 authors = ["GBarnsley <gregbarnsley@hotmail.co.uk>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
