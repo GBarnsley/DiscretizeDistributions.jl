@@ -1,4 +1,4 @@
-using Random, Distributions, .DiscretizeDistributions, Plots, IntervalArithmetic
+using Random, Distributions, .DiscretizeDistributions, Plots, IntervalArithmetic, StatsPlots
 Random.seed!(1234)
 N = 100000
 
@@ -25,11 +25,12 @@ println(round(var(centred_discrete); digits = 2))
 
 # visual comparison
 time_steps = range(minimum(continuous_waiting_time), maximum(continuous_waiting_time))
-
 plot(time_steps, pdf.(continuous_waiting_time, time_steps),
     label = "Continuous PDF", lw = 2, xlabel = "Time to event B, from A")
-histogram!(d_sims .* time_step .+ (time_step / 2), bins = time_steps, normalize = true,
-    label = "Discrete approximation (adjusted for centering)", alpha = 0.5)
+values = discrete_waiting_time.support
+counts = [sum(v .== d_sims) for v in values] ./ N
+bar!(values .* time_step .+ (time_step / 2), counts,
+    label = "Discrete approximation (bar height adjusted for centering)", alpha = 0.5, bar_width = 1.0)
 savefig("docs/src/assets/single_censoring.png")
 
 ## 2 Double censoring
@@ -42,10 +43,10 @@ discrete_waiting_time_two.support ./= time_step
 
 c_sims_two = c_sims .+ rand(continuous_waiting_time_two, N)
 
-d_sims_two = d_sims .+ rand(discrete_waiting_time_two, N) .+ 1
+d_sims_two = d_sims .+ rand(discrete_waiting_time_two, N)
 
 #summaries
-d_sims_two_adjusted = (d_sims_two .* time_step)
+d_sims_two_adjusted = ((d_sims_two .+ 1) .* time_step)
 
 println(round(mean(c_sims_two); digits = 2))
 println(round(mean(d_sims_two_adjusted); digits = 2))
@@ -57,8 +58,10 @@ println(round(var(c_sims_two); digits = 2))
 println(round(var(d_sims_two_adjusted); digits = 2))
 
 #visual
-histogram(c_sims_two, bins = 0:40, label = "Continuous PDF",
-    normalize = true, alpha = 0.5, xlabel = "Time to event C, from A")
-histogram!(d_sims_two_adjusted, bins = 0:40, normalize = true,
-    label = "Discrete approximation", alpha = 0.5)
+density(c_sims_two, label = "Continuous PDF", xlabel = "Time to event C, from A")
+values = [discrete_waiting_time.support..., discrete_waiting_time_two.support .+ maximum(discrete_waiting_time.support)...]
+values = values[values .< 40]
+counts = [sum(v .== d_sims_two) for v in values] ./ N
+bar!(values .* time_step .+ (time_step / 2), counts,
+    label = "Discrete approximation\n(bar height adjusted for centering)", alpha = 0.5, bar_width = 1.0)
 savefig("docs/src/assets/double_censoring.png")

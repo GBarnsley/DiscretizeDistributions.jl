@@ -1,7 +1,7 @@
 # Double Censoring
 
 The motivation for this package is simplifying the simulation of continuous waiting time distributions in discrete time.
-For example say I have some complex dynamic model where after event $A$ occurs there we know in the real world $\mathrm{Gamma}(3.1, 2.1)$ is a good approximation for the time until event $B$ occurs.
+For example say I have some complex dynamic model where after event $A$ occurs there we know in the real world, $\mathrm{Gamma}(3.1, 2.1)$ is a good approximation for the time until event $B$ occurs.
 
 If I am running this model in discrete time with a relative time step of 0.1, I can use the following code to simulate this:
 ```julia
@@ -14,10 +14,11 @@ discrete_waiting_time = discretize(continuous_waiting_time, time_step, method = 
 discrete_waiting_time.support ./= time_step
 ```
 
-Then discrete_waiting_time can be used to simulate the number of discrete steps until the event occurs, with each $x ~ \mathrm{discrete_waiting_time}$ representing that the event occurs in the interval $[x, x + 1)$
+Then discrete_waiting_time can be used to simulate the number of discrete steps until the event occurs, with each $x \dist \mathrm{discrete\_waiting\_time}$ representing that the event occurs in the interval $[x, x + 1)$
 
 This approximates the continuous distribution well (after adjusting for left-alignment of the intervals):
-![Figure showing a histogram of samples from discrete_waiting_time against the pdf of the continuous distribution](assets/single_censoring.png)
+
+![Figure showing samples from discrete_waiting_time against the pdf of the continuous distribution](assets/single_censoring.png)
 
 Comparing summary values:
 
@@ -40,7 +41,8 @@ discrete_waiting_time_two.support ./= time_step
 ```
 
 This also approximates the continuous distribution reasonably well (after adjusting for left-alignment of the intervals):
-![Figure showing a histogram of samples from discrete_waiting_time and discrete_waiting_time_two compared to the histogram of the two continuous distributions](assets/double_censoring.png)
+
+![Figure showing the output of samples from discrete_waiting_time and discrete_waiting_time_two compared to a density estimate of the convolution of two continuous distributions](assets/double_censoring.png)
 
 Comparing summary values:
 
@@ -51,7 +53,7 @@ Comparing summary values:
 | Variance | 25.64 | 25.8 |
 
 Hence I don't think double censoring matters that much for the use case of this package.
-We do end with the differences in the Medians and the in general the discrete approximation is slightly skewed to the right.
+We do end with the differences in the medians (expected) and the discrete approximation is slightly skewed to the left.
 A solution to this would be to try to discretize over both distributions and their convolution, but this hasn't been implemented yet.
 
 See `examples/double_censoring.jl` for the script behind this analysis.
